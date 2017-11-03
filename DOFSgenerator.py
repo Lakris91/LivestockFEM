@@ -37,21 +37,15 @@ for i in range(len(ESI)):
     DOFSlist.append(DOFS)
 
 DOFSflat = [item for sublist in DOFSlist for item in sublist]
-print DOFSlist
-print DOFSflat
-#number of DOFS
-
-"""
-nd=rngstart-1
-print nd
-
-if len(AHE) == 0:
-    #Add hinge in all elements connected to node
-    for ahn in AHN:
-        print "ahn="+str(ahn)
-        print EEI
-        if not ESI.count(ahn)==0:
-            print ESI.index(ahn)
-        if not EEI.count(ahn)==0:
-            print EEI.index(ahn)
-"""
+while DOFSflat.count(0)<>0:
+    m = range(1,len(DOFSflat))
+    new=min(set(m)-set(DOFSflat))
+    DOFSflat[DOFSflat.index(0)]=new
+newDOFSLIST=[]
+templist=[]
+for dofs in DOFSflat:
+    templist.append(dofs)
+    if len(templist)==6:
+        newDOFSLIST.append(templist)
+        templist=[]
+print newDOFSLIST
