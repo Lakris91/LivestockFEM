@@ -1,7 +1,7 @@
 ﻿import rhinoscriptsyntax as rs
 import scriptcontext as sc
 import Rhino as rh
-sc.doc = ghdoc
+#sc.doc = ghdoc
 def SortCurvesMid(curves):
     points=[]
     indices=[]
@@ -83,4 +83,4 @@ for element in elements:
 #Preview numbering
 midpoints=[rs.CurveMidPoint(element) for element in elements]
 EleNum=TextPreview(midpoints,range(len(midpoints)),TxtHeight)
-NodNum=TextPreview(nodes,range(len(midpoints)),TxtHeight)
+NodNum=TextPreview(nodes,range(len(nodes)),TxtHeight)
