@@ -67,3 +67,15 @@ if len(AHN)<>0:
             newDOFSLIST.append(templist)
             templist=[]
     DOFSlist = newDOFSLIST
+DegreesOfFreedom=[]
+for defree in DOFSlist:
+    DegreesOfFreedom.append(str(defree))
+
+MatLabDOFS=""
+for k, dofree in enumerate(DegreesOfFreedom):
+    MatLabDOF= "D("+str(k+1)+",:)="+ dofree.replace(",","")+";\n"
+    MatLabDOFS=MatLabDOFS+MatLabDOF
+MatLabDOFS=MatLabDOFS+"nd="+str(max(DOFSflat))+";"
+
+
+
