@@ -1,6 +1,5 @@
 ﻿
-listDOFS=NodeDOFS.replace("[","").replace("]","").split(",")
-print listDOFS
+listDOFS=NodeDOFS.replace("[","").replace("]","").replace(" ","").split(",")
 SNN=SupportNodesNo
 #Repeat last element of shortest list
 if len(SNN)<>0 and len(LockX)<>0 and len(LockY)<>0 and len(LockRot)<>0:
@@ -13,5 +12,17 @@ LockX= LockX[:nodeLen]
 LockY= LockY[:nodeLen]
 LockRot= LockRot[:nodeLen]
 
-for snn in SNN:
-    print range(snn,snn+3)
+SupportDOFS=[]
+for i,snn in enumerate(SNN):
+    dofsInd=range(snn*3,snn*3+3)
+    if LockX[i]:
+        SupportDOFS.append(listDOFS[dofsInd[0]])
+    if LockY[i]:
+        SupportDOFS.append(listDOFS[dofsInd[1]])
+    if LockRot[i]:
+        SupportDOFS.append(listDOFS[dofsInd[2]])
+print SupportDOFS
+
+MatLabSupport=""
+for j,DOF in enumerate(SupportDOFS):
+    MatLabSupport=MatLabSupport+"U("+str(j+1)+")="+DOF+";\n"
