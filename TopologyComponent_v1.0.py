@@ -84,3 +84,8 @@ for element in elements:
 midpoints=[rs.CurveMidPoint(element) for element in elements]
 EleNum=TextPreview(midpoints,range(len(midpoints)),TxtHeight)
 NodNum=TextPreview(nodes,range(len(nodes)),TxtHeight)
+
+ElePlanes=[]
+for i in range(len(StartIndex)):
+    xVector=rs.VectorUnitize(rs.VectorCreate(nodes[EndIndex[i]],nodes[StartIndex[i]]))
+    ElePlanes.append(rs.PlaneFromNormal(nodes[StartIndex[i]],(0,0,1),xVector))
