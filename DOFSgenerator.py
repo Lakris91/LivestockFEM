@@ -78,7 +78,7 @@ for k, dofree in enumerate(DegreesOfFreedom):
 MatLabDOFS=MatLabDOFS+"nd="+str(max(DOFSflat))+";"
 
 NodeDOFS=[]
-for nodeNo in range(max(max(ESI),max(EEI))):
+for nodeNo in range(max(max(ESI),max(EEI))+1):
     for l,sdof in enumerate(DOFSlist):
         if nodeNo == ESI[l]:
             NodeDOFS.append(sdof[:3])
