@@ -1,4 +1,16 @@
-﻿ML=open("C:/Git/LKplugin/RammeLKpluginTemplate.m","r")
+﻿import os
+import subprocess
+import Grasshopper as GH
+
+def matlabIsInstalled():
+    for path in os.environ["PATH"].split(";"):
+        if os.path.isfile(os.path.join(path, "matlab.exe")):
+            return True
+    return False
+
+UOfolder= GH.Folders.UserObjectFolders[0]+"LKplugin\\"
+
+ML=open(UOfolder+"RammeLKpluginTemplate.m","r")
 MLstring=ML.read()
 ML.close()
 
@@ -12,14 +24,16 @@ MLstring = MLstring.replace("MatLabElementLoad",MatLabElementLoad)
 MLstring = MLstring.replace("MatLabElementLoad",MatLabElementLoad)
 MLstring = MLstring.replace("PlotScalingDeformation",str(PlotScalingDeformation[0]))
 MLstring = MLstring.replace("PlotScalingForces",str(PlotScalingForces[0]))
-#print MLstring
 
-mFile=open("C:/Git/LKplugin/TempMLfile.m","w")
+tempFPath=UOfolder+"TempMLfile.m"
+
+mFile=open(tempFPath,"w")
 mFile.write(MLstring)
 mFile.close()
 
-import os
-import subprocess
-if run:
-    subprocess.Popen("matlab -nosplash -nodesktop -r \"run C:\Git\LKplugin\TempMLfile.m\"")
-    #os.startfile("C:/Git/LKplugin/RunMLscript.bat")
+if matlab_installed():
+    if run:
+        subprocess.Popen("matlab -nosplash -nodesktop -r \"run "+tempFPath+"\"")
+        #os.startfile("C:/Git/LKplugin/RunMLscript.bat")
+
+
