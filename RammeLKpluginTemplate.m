@@ -96,6 +96,18 @@ disp('Normalkræfter:'); F1 = F1
 disp('Forskydningskræfter:'); F2 = F2
 disp('Momenter:'); M = M
 
+fileID = fopen('result.txt','w');
+fprintf(fileID,'%0.4f,',V);
+fprintf(fileID,'/');
+fprintf(fileID,'%0.4f,',Ru);
+fprintf(fileID,'/');
+fprintf(fileID,'%0.4f,',F1);
+fprintf(fileID,'/');
+fprintf(fileID,'%0.4f,',F2);
+fprintf(fileID,'/');
+fprintf(fileID,'%0.4f,',M);
+fclose(fileID);
+
 plotS(X,T,nel,F1,1,dL,Sskala)
 plotS(X,T,nel,F2,2,dL,Sskala)
 plotS(X,T,nel,M,3,dL,Sskala)
@@ -203,6 +215,7 @@ function plotDof(X,T,D,V,nel,skala)
 % plot deformeret geometri (degrees of freedom)
 figure(); axis equal; hold on 
 title(['Deformationer, skala: ' num2str(skala, '%10.3e')]); 
+fileID2 = fopen('deformation.txt','w');
 for el = 1:nel
   plot(X(T(el,:),1),X(T(el,:),2),'b:')
   % deformeret
@@ -224,7 +237,14 @@ for el = 1:nel
     Xs(:,i)=X(T(el,1),:)'*(1-s)+X(T(el,2),:)'*s+skala*Au'*N*A*v;
   end
   plot(Xs(1,:),Xs(2,:),'b-');
+  
+  fprintf(fileID2,'%0.4f,',Xs(1,:));
+  fprintf(fileID2,'/');
+  fprintf(fileID2,'%0.4f,',Xs(2,:));
+  fprintf(fileID2,'/');
+  fprintf(fileID2,'_');
 end
+fclose(fileID2);
 hold off
 end
 
