@@ -1,6 +1,10 @@
 ﻿import rhinoscriptsyntax as rs
 import scriptcontext as sc
 import Rhino as rh
+#Deactivate preview for ElePlanes and Nodes
+ghenv.Component.Params.Output[0].Hidden = True
+ghenv.Component.Params.Output[2].Hidden = True
+
 #sc.doc = ghdoc
 def SortCurvesMid(curves):
     points=[]
@@ -41,7 +45,7 @@ def EndPtsUnique(lines):
             if pts.count(endPt)==0:
                 pts.append(endPt)
     return pts
-def TextPreview(basepoints,preString,height):
+def TextPreview(basepoints,preString):
     rs.EnableRedraw(False)
     plane=[]
     for pt in basepoints:
@@ -51,7 +55,7 @@ def TextPreview(basepoints,preString,height):
     
     numbering =[]
     for i in range(len(plane)):
-        preText = rs.AddText(str(preString[i]), plane[i], height,justification=131074)
+        preText = rs.AddText(str(preString[i]), plane[i], 0.25*(1/rs.UnitScale(4)),justification=131074)
         textGeo = rs.ExplodeText(preText, True)
         for i in textGeo:
             numbering.append(rs.coercegeometry(i))
@@ -82,10 +86,34 @@ for element in elements:
 
 #Preview numbering
 midpoints=[rs.CurveMidPoint(element) for element in elements]
-EleNum=TextPreview(midpoints,range(len(midpoints)),TxtHeight)
-NodNum=TextPreview(nodes,range(len(nodes)),TxtHeight)
+EleNum=TextPreview(midpoints,range(len(midpoints)))
+NodNum=TextPreview(nodes,range(len(nodes)))
+
+#Scale Nodes to Meter
+for repI, node in enumerate(nodes):
+    nodes[repI]=node*rs.UnitScale(4)
 
 ElePlanes=[]
 for i in range(len(StartIndex)):
     xVector=rs.VectorUnitize(rs.VectorCreate(nodes[EndIndex[i]],nodes[StartIndex[i]]))
     ElePlanes.append(rs.PlaneFromNormal(nodes[StartIndex[i]],(0,0,1),xVector))
+
+#To MatLab text
+i=1
+MatLabNodes=""
+for node in nodes:
+    X,Y,Z = node
+    nodesString= "X("+str(i)+",:) = ["+str(X)+" "+str(Y)+"];"
+    MatLabNodes=MatLabNodes+nodesString+"\n"
+    i+=1
+MatLabNodes=MatLabNodes+"nno="+str(i-1)+";"
+
+i=1
+MatLabElements=""
+ESI=StartIndex
+EEI=EndIndex
+for j in range(len(ESI)):
+    elementString= "T("+str(i)+",:) = ["+str(ESI[j]+1)+" "+str(EEI[j]+1)+"];"
+    MatLabElements=MatLabElements+elementString+"\n"
+    i+=1
+MatLabElements=MatLabElements+"nel="+str(i-1)+";"
