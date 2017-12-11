@@ -1,8 +1,6 @@
 ﻿import rhinoscriptsyntax as rs
 ESI=ElementStartIndex
 EEI=ElementEndIndex
-nodecount=max(ElementStartIndex+ElementEndIndex)-min(ElementStartIndex+ElementEndIndex)+1
-dofcount=nodecount*3
 AHE=AddHingeElement
 AHN=AddHingeNode
 #Repeat last element of shortest list
@@ -10,36 +8,19 @@ if len(AHE)<>0 and len(AHN)<>0:
     maxlen = max(len(AHE),len(AHN))
     AHE.extend([AHE[-1]]*(maxlen-len(AHE)))
     AHN.extend([AHN[-1]]*(maxlen-len(AHN)))
-uninodes=[]
-doflist=[]
+
+NodeDOFS=NodeDOFS.replace("[[","").replace("]]","").split("], [")
 DOFSlist=[]
-rngstart=1
-#Define no-hinge DOFS
 for i in range(len(ESI)):
-    if uninodes.count(ESI[i])==0:
-        uninodes.append(ESI[i])
-        dofstart=range(rngstart,rngstart+3)
-        doflist.append(dofstart)
-        rngstart=rngstart+3
-    else:
-        dofstart=doflist[uninodes.index(ESI[i])]
-    
-    if uninodes.count(EEI[i])==0:
-        uninodes.append(EEI[i])
-        dofend=range(rngstart,rngstart+3)
-        doflist.append(dofend)
-        rngstart=rngstart+3
-    else:
-        dofend=doflist[uninodes.index(EEI[i])]
-    DOFS=dofstart+dofend
-    DOFSlist.append(DOFS)
+    DOFSlist.append(map(int,NodeDOFS[ESI[i]].split(","))+map(int,NodeDOFS[EEI[i]].split(",")))
+
+DOFSflat = [item for sublist in DOFSlist for item in sublist]
 
 if len(AHN)<>0:
     #Add position of hinge
     for j in range(len(DOFSlist)):
         if len(AHE) == 0:
             for ahn in AHN:
-                print inidof==ahn
                 if ESI[j]==ahn:
                     DOFSlist[j][2]=0
                 if EEI[j]==ahn:
@@ -52,13 +33,15 @@ if len(AHN)<>0:
                             DOFSlist[j][2]=0
                         if EEI[j]==ahn:
                             DOFSlist[j][5]=0
-    
-    #Add hinge
     DOFSflat = [item for sublist in DOFSlist for item in sublist]
-    while DOFSflat.count(0)<>0:
-        m = range(1,len(DOFSflat))
-        new=min(set(m)-set(DOFSflat))
-        DOFSflat[DOFSflat.index(0)]=new
+    print DOFSflat
+    #Add hinge
+    indices = [b for b, a in enumerate(DOFSflat) if a == 0]
+    lowest =[c+1 for c in range(len(DOFSflat)) if DOFSflat.count(c+1)==0]
+    print lowest
+    for lowI,indi in enumerate(indices):
+        DOFSflat[indi]=lowest[lowI]
+    print DOFSflat
     newDOFSLIST=[]
     templist=[]
     for dofs in DOFSflat:
@@ -77,6 +60,7 @@ for k, dofree in enumerate(DegreesOfFreedom):
     MatLabDOFS=MatLabDOFS+MatLabDOF
 MatLabDOFS=MatLabDOFS+"nd="+str(max(DOFSflat))+";"
 
+print DOFSlist
 NodeDOFS=[]
 for nodeNo in range(max(max(ESI),max(EEI))+1):
     for l,sdof in enumerate(DOFSlist):
@@ -87,3 +71,5 @@ for nodeNo in range(max(max(ESI),max(EEI))+1):
             NodeDOFS.append(sdof[3:])
             break
 NodeDOFS=str(NodeDOFS)
+
+
