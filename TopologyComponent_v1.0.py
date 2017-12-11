@@ -1,6 +1,7 @@
 ﻿import rhinoscriptsyntax as rs
 import scriptcontext as sc
 import Rhino as rh
+import math
 #Deactivate preview for ElePlanes and Nodes
 ghenv.Component.Params.Output[0].Hidden = True
 ghenv.Component.Params.Output[2].Hidden = True
@@ -30,7 +31,9 @@ def SortEndPtsUnique(lines):
     sortPts=[]
     lines2=[]
     for line in lines:
-        endPts=[rs.CurveStartPoint(line),rs.CurveEndPoint(line)]
+        stPt=rs.AddPoint(round(rs.CurveStartPoint(line)[0],3),round(rs.CurveStartPoint(line)[1],3),0)
+        enPt=rs.AddPoint(round(rs.CurveEndPoint(line)[0],3),round(rs.CurveEndPoint(line)[1],3),0)
+        endPts=[rs.coerce3dpoint(stPt),rs.coerce3dpoint(enPt)]
         endPts=rs.SortPoints(endPts)
         lines2.append(rs.AddLine(endPts[0],endPts[1]))
         for endPt in endPts:
@@ -40,7 +43,9 @@ def SortEndPtsUnique(lines):
 def EndPtsUnique(lines):
     pts=[]
     for line in lines:
-        endPts=[rs.CurveStartPoint(line),rs.CurveEndPoint(line)]
+        stPt=rs.AddPoint(round(rs.CurveStartPoint(line)[0],3),round(rs.CurveStartPoint(line)[1],3),0)
+        enPt=rs.AddPoint(round(rs.CurveEndPoint(line)[0],3),round(rs.CurveEndPoint(line)[1],3),0)
+        endPts=[rs.coerce3dpoint(stPt),rs.coerce3dpoint(enPt)]
         for endPt in endPts:
             if pts.count(endPt)==0:
                 pts.append(endPt)
@@ -81,8 +86,8 @@ else:
 StartIndex=[]
 EndIndex=[]
 for element in elements:
-    StartIndex.append(nodes.index(rs.CurveStartPoint(element)))
-    EndIndex.append(nodes.index(rs.CurveEndPoint(element)))
+    StartIndex.append(rs.PointArrayClosestPoint(nodes, rs.CurveStartPoint(element)))
+    EndIndex.append(rs.PointArrayClosestPoint(nodes, rs.CurveEndPoint(element)))
 
 #Preview numbering
 midpoints=[rs.CurveMidPoint(element) for element in elements]
@@ -117,3 +122,56 @@ for j in range(len(ESI)):
     MatLabElements=MatLabElements+elementString+"\n"
     i+=1
 MatLabElements=MatLabElements+"nel="+str(i-1)+";"
+
+
+ESI=StartIndex
+EEI=EndIndex
+nodecount=max(ESI+EEI)-min(ESI+EEI)+1
+dofcount=nodecount*3
+
+uninodes=[]
+doflist=[]
+DOFSlist=[]
+rngstart=1
+#Define no-hinge DOFS
+for i in range(len(ESI)):
+    if uninodes.count(ESI[i])==0:
+        uninodes.append(ESI[i])
+        dofstart=range(rngstart,rngstart+3)
+        doflist.append(dofstart)
+        rngstart=rngstart+3
+    else:
+        dofstart=doflist[uninodes.index(ESI[i])]
+    
+    if uninodes.count(EEI[i])==0:
+        uninodes.append(EEI[i])
+        dofend=range(rngstart,rngstart+3)
+        doflist.append(dofend)
+        rngstart=rngstart+3
+    else:
+        dofend=doflist[uninodes.index(EEI[i])]
+    DOFS=dofstart+dofend
+    DOFSlist.append(DOFS)
+
+DOFSflat = [item for sublist in DOFSlist for item in sublist]
+
+DegreesOfFreedom=[]
+for defree in DOFSlist:
+    DegreesOfFreedom.append(str(defree))
+
+MatLabDOFS=""
+for k, dofree in enumerate(DegreesOfFreedom):
+    MatLabDOF= "D("+str(k+1)+",:)="+ dofree.replace(",","")+";\n"
+    MatLabDOFS=MatLabDOFS+MatLabDOF
+MatLabDOFS=MatLabDOFS+"nd="+str(max(DOFSflat))+";"
+
+NodeDOFS=[]
+for nodeNo in range(max(max(ESI),max(EEI))+1):
+    for l,sdof in enumerate(DOFSlist):
+        if nodeNo == ESI[l]:
+            NodeDOFS.append(sdof[:3])
+            break
+        elif nodeNo ==EEI[l]:
+            NodeDOFS.append(sdof[3:])
+            break
+NodeDOFS=str(NodeDOFS)
