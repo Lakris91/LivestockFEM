@@ -32,9 +32,6 @@ Sskala = PlotScalingForces;    % snitkræfter
 
 %% PROGRAM 
 
-% plot geometrien
-plotTop(X,T,nel,nno)
-
 % Opstil systemstivhedsmatrix K
 K = zeros(nd,nd);                      % initialisering af K
 for el = 1:nel
@@ -77,8 +74,8 @@ Vf = Kff\(Rf-Kfu*Vu);            % frie knudeflytninger
 Ru = Kfu'*Vf+Kuu*Vu;             % reaktioner
 V(df) = Vf;
 V(du) = Vu;
-disp('Flytninger:'); V = V       % udskriv flytninger
-disp('Reaktioner:'); Ru = Ru     % udskriv rekationer
+%%disp('Flytninger:'); V = V       % udskriv flytninger
+%%disp('Reaktioner:'); Ru = Ru     % udskriv rekationer
 plotDof(X,T,D,V,nel,Vskala)      % plot deformeret gitter
 
 % Beregn snitkræfter 
@@ -92,9 +89,9 @@ for el = 1:nel
     M(el,:) = m;
 end
 
-disp('Normalkræfter:'); F1 = F1
-disp('Forskydningskræfter:'); F2 = F2
-disp('Momenter:'); M = M
+%%disp('Normalkræfter:'); F1 = F1
+%%disp('Forskydningskræfter:'); F2 = F2
+%%disp('Momenter:'); M = M
 
 fileID = fopen('result.txt','w');
 fprintf(fileID,'%0.4f,',V);
@@ -112,6 +109,7 @@ plotS(X,T,nel,F1,1,dL,Sskala)
 plotS(X,T,nel,F2,2,dL,Sskala)
 plotS(X,T,nel,M,3,dL,Sskala)
 
+quit
 end % BygFEM_ramme
 
 %% FUNKTIONER
@@ -147,7 +145,7 @@ elseif dLe(1) == 2
   m = dLe(2)*L^2/12;
   r = [0 p m 0 p -m]';
 else
-  disp('Fejl i specifikation af last!')
+  %%disp('Fejl i specifikation af last!')
 end
 r = A'*r;
 end
@@ -194,30 +192,13 @@ A = [ n(1) n(2)   0     0     0    0
        0     0    0     0     0    1];
 end
 
-function plotTop(X,T,nel,nno)
-% plot geometri
-figure(); title('Elementtopologi'); axis equal; hold on
-for el = 1:nel
-  plot(X(T(el,:),1),X(T(el,:),2),'b-')
-end
-for no = 1:nno
-  text(X(no,1),X(no,2),num2str(no),...
-       'color','blue','BackgroundColor',[0.7 0.7 0.7]);
-end
-for el = 1:nel
-  xp=mean(X(T(el,:),:));
-  text(xp(1),xp(2),num2str(el),'color','black');
-end
-hold off
-end
-
 function plotDof(X,T,D,V,nel,skala)
 % plot deformeret geometri (degrees of freedom)
-figure(); axis equal; hold on 
-title(['Deformationer, skala: ' num2str(skala, '%10.3e')]); 
+%%figure(); axis equal; hold on 
+%%title(['Deformationer, skala: ' num2str(skala, '%10.3e')]); 
 fileID2 = fopen('deformation.txt','w');
 for el = 1:nel
-  plot(X(T(el,:),1),X(T(el,:),2),'b:')
+  %%plot(X(T(el,:),1),X(T(el,:),2),'b:')
   % deformeret
   % dan transformationsmatrix
   no1 = T(el,1);  no2 = T(el,2);       % startknude/slutknude
@@ -228,7 +209,7 @@ for el = 1:nel
   % hent lokale flytninger
   v=V(D(el,:));
   % koordinater plus flytninger
-  nrp=11;
+  nrp=20;
   Xs=zeros(2,nrp);
   for i=1:nrp
     s=(i-1)/(nrp-1);
@@ -236,7 +217,7 @@ for el = 1:nel
        0   1-3*s^2+2*s^3 (s-2*s^2+s^3)*L 0 3*s^2-2*s^3 (-s^2+s^3)*L];
     Xs(:,i)=X(T(el,1),:)'*(1-s)+X(T(el,2),:)'*s+skala*Au'*N*A*v;
   end
-  plot(Xs(1,:),Xs(2,:),'b-');
+  %%plot(Xs(1,:),Xs(2,:),'b-');
   
   fprintf(fileID2,'%0.4f,',Xs(1,:));
   fprintf(fileID2,'/');
@@ -245,27 +226,33 @@ for el = 1:nel
   fprintf(fileID2,'_');
 end
 fclose(fileID2);
-hold off
+%%hold off
 end
 
 function plotS(X,T,nel,S,s,dL,skala)
 % plot snitkraft S
 if s == 1
   sf = 'Normalkraft';
+  fileID3 = fopen('normalforces.txt','w');
+  fileID4 = fopen('normalsignforces.txt','w');
 elseif s == 2
   sf = 'Forskydningskraft';
+  fileID3 = fopen('shearforces.txt','w');
+  fileID4 = fopen('shearsignforces.txt','w');
 elseif s == 3
   sf = 'Moment';
+  fileID3 = fopen('momentforces.txt','w');
+  fileID4 = fopen('momentsignforces.txt','w');
 else
   sf = ' ';
 end
-figure(); axis equal; hold on 
-title([sf ', skala: ' num2str(skala, '%10.3e')]); 
+%%figure(); axis equal; hold on 
+%%title([sf ', skala: ' num2str(skala, '%10.3e')]); 
 for el = 1:nel
   n = X(T(el,2),:)-X(T(el,1),:);  % retningsvektor
   L = sqrt(dot(n,n));             % elementlængde
   n = n/L;                        % enhedsvektor
-  plot(X(T(el,:),1),X(T(el,:),2),'b-')
+  %%plot(X(T(el,:),1),X(T(el,:),2),'b-')
   F1 = [-n(2) n(1)]*S(el,1)*skala;
   F2 = [-n(2) n(1)]*S(el,2)*skala;
   x1 = X(T(el,1),1);
@@ -274,11 +261,15 @@ for el = 1:nel
   y2 = X(T(el,2),2);
   xm = (x1+x2)/2-n(2)*L/15;
   ym = (y1+y2)/2+n(1)*L/15;
-  plot(xm,ym,'r+')
+  %%plot(xm,ym,'r+')
+  fprintf(fileID4,'%0.4f',xm);
+  fprintf(fileID4,',');
+  fprintf(fileID4,'%0.4f',ym);
+  fprintf(fileID4,'_');
   if s == 3
     p = dL(el,2);
     m = -p*L^2/2;
-    np = 9;             % antal mellempunkter
+    np = 20;             % antal mellempunkter
     Xp = zeros(np+4,1);
     Yp = zeros(np+4,1);
     Xp(1) =    x1;  Xp(2) =    x1+F1(1);
@@ -296,7 +287,15 @@ for el = 1:nel
     Xp = [x1; x1+F1(1); x2+F2(1); x2];
     Yp = [y1; y1+F1(2); y2+F2(2); y2];
   end
-  plot(Xp,Yp,'r-')
+  %%plot(Xp,Yp,'r-')
+  fprintf(fileID3,'%0.4f,',Xp);
+  fprintf(fileID3,'/');
+  fprintf(fileID3,'%0.4f,',Yp);
+  fprintf(fileID3,'/');
+  fprintf(fileID3,'_');
 end
-hold off
+fclose(fileID3);
+fclose(fileID4);
+%%hold off
 end
+
