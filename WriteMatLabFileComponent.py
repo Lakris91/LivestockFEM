@@ -31,9 +31,16 @@ import subprocess
 import Grasshopper as GH
 import rhinoscriptsyntax as rs
 
-ghenv.Component.Params.Output[8].Hidden = True
+ghenv.Component.Params.Output[8].Hidden =True
 ghenv.Component.Params.Output[9].Hidden = True
 ghenv.Component.Params.Output[10].Hidden = True
+
+def addFileWatcher(path):
+    global watcher 
+    watcher = GH.Kernel.GH_FileWatcher.CreateFileWatcher(path, GH.Kernel.GH_FileWatcherEvents.All, GH.Kernel.GH_FileWatcher.FileChangedSimple(fileChanged))
+
+def fileChanged(path):
+    ghenv.Component.ExpireSolution(True)
 
 def matlabIsInstalled():
     for path in os.environ["PATH"].split(";"):
@@ -100,7 +107,7 @@ def plusSign(position):
 if (MatLabNodes==None or 
 MatLabElements==None or
 MatLabDOFS==None or
-MatLabMateria==None or
+MatLabMaterial==None or
 MatLabSupport==None or
 MatLabNodeLoads==None or
 MatLabElementLoad==None):
@@ -120,8 +127,8 @@ else:
     MLstring = MLstring.replace("MatLabNodeLoads",MatLabNodeLoads)
     MLstring = MLstring.replace("MatLabElementLoad",MatLabElementLoad)
     MLstring = MLstring.replace("MatLabElementLoad",MatLabElementLoad)
-    MLstring = MLstring.replace("PlotScalingDeformation",str(PlotScalingDeformation[0]))
-    MLstring = MLstring.replace("PlotScalingForces",str(PlotScalingForces[0]))
+    MLstring = MLstring.replace("PlotScalingDeformation",str(PlotScalingDeformation))
+    MLstring = MLstring.replace("PlotScalingForces",str(PlotScalingForces))
     
     tempFPath=UOfolder+"TempMLfile.m"
     
@@ -144,6 +151,8 @@ else:
             P=subprocess.Popen("matlab -nosplash -nodesktop -minimize -r \"run "+tempFPath+"\"")
     else:
         Info.append("MatLab not installed")
+    
+    addFileWatcher(momentsignfile)
     
     if os.path.isfile(resultfile) and os.path.isfile(deformationfile):
         if True:
