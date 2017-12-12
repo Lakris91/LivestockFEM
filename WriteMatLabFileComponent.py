@@ -37,7 +37,7 @@ ghenv.Component.Params.Output[10].Hidden = True
 
 def addFileWatcher(path):
     global watcher 
-    watcher = GH.Kernel.GH_FileWatcher.CreateFileWatcher(path, GH.Kernel.GH_FileWatcherEvents.All, GH.Kernel.GH_FileWatcher.FileChangedSimple(fileChanged))
+    watcher = GH.Kernel.GH_FileWatcher.CreateFileWatcher(path, GH.Kernel.GH_FileWatcherEvents.Created, GH.Kernel.GH_FileWatcher.FileChangedSimple(fileChanged))
 
 def fileChanged(path):
     ghenv.Component.ExpireSolution(True)
@@ -144,15 +144,19 @@ else:
     momentsignfile=UOfolder+"momentsignforces.txt"
     normalsignfile=UOfolder+"normalsignforces.txt"
     shearsignfile=UOfolder+"shearsignforces.txt"
+    changedfile=UOfolder+"changed.txt"
     Info=[]
     
     if matlabIsInstalled():
         if Run:
             P=subprocess.Popen("matlab -nosplash -nodesktop -minimize -r \"run "+tempFPath+"\"")
+            if 'watcher' in globals():
+                del watcher
+            addFileWatcher(changedfile)
     else:
         Info.append("MatLab not installed")
     
-    addFileWatcher(momentsignfile)
+    
     
     if os.path.isfile(resultfile) and os.path.isfile(deformationfile):
         if True:

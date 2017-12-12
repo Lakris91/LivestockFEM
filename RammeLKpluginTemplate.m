@@ -109,6 +109,9 @@ plotS(X,T,nel,F1,1,dL,Sskala)
 plotS(X,T,nel,F2,2,dL,Sskala)
 plotS(X,T,nel,M,3,dL,Sskala)
 
+delete('changed.txt')
+fileID5 = fopen('changed.txt','w');
+fclose(fileID5);
 quit
 end % BygFEM_ramme
 
