@@ -1,8 +1,28 @@
-﻿import rhinoscriptsyntax as rs
+﻿"""Generates the topology of the the system.
+    Inputs:
+        InputCurves: The topology curves, polylines or lines
+        sortElements: Sort elements euclidean from the midpoint
+        sortNodes: Sort the nodes of an element euclidean
+    Output:
+        Nodes: Node coordinates in meter
+        Elements: Lines representing the elements
+        ElementPlanes: Local planes for elements for use in the element load component
+        ElementStartIndex: Index of start node of element
+        ElementEndIndex: Index of end node of element
+        NodeDOFS: Degrees of freedom for each node (no hinges)
+        ElementNo: Preview of element numbers
+        NodeNo: Preview of node numbers
+        MatLabNodes: MatLab string for the nodes
+        MatLabElement: MatLab string for the elements
+        MatLabDOFS: MatLab string for the degrees of freedom (no hinges)"""
+
+__author__ = "LasseKristensen"
+
+import rhinoscriptsyntax as rs
 import scriptcontext as sc
 import Rhino as rh
 import math
-#Deactivate preview for ElePlanes and Nodes
+#Deactivate preview for ElementPlanes and Nodes
 ghenv.Component.Params.Output[0].Hidden = True
 ghenv.Component.Params.Output[2].Hidden = True
 
@@ -69,109 +89,107 @@ def TextPreview(basepoints,preString):
     rs.EnableRedraw(True)
     return numbering
 
-curves=SafeExplodeCrv(incurves)
-
-elements=[]
-nodes=[]
-for curve in curves:
-    elements.append(rs.AddLine(rs.CurveStartPoint(curve),rs.CurveEndPoint(curve)))
-
-if sortEle:
-    elements=SortCurvesMid(elements)
-if sortNod:
-    nodes,elements=SortEndPtsUnique(elements)
-else:
-    nodes=EndPtsUnique(elements)
-
-StartIndex=[]
-EndIndex=[]
-for element in elements:
-    StartIndex.append(rs.PointArrayClosestPoint(nodes, rs.CurveStartPoint(element)))
-    EndIndex.append(rs.PointArrayClosestPoint(nodes, rs.CurveEndPoint(element)))
-
-#Preview numbering
-midpoints=[rs.CurveMidPoint(element) for element in elements]
-EleNum=TextPreview(midpoints,range(len(midpoints)))
-NodNum=TextPreview(nodes,range(len(nodes)))
-
-#Scale Nodes to Meter
-for repI, node in enumerate(nodes):
-    nodes[repI]=node*rs.UnitScale(4)
-
-ElePlanes=[]
-for i in range(len(StartIndex)):
-    xVector=rs.VectorUnitize(rs.VectorCreate(nodes[EndIndex[i]],nodes[StartIndex[i]]))
-    ElePlanes.append(rs.PlaneFromNormal(nodes[StartIndex[i]],(0,0,1),xVector))
-
-#To MatLab text
-i=1
-MatLabNodes=""
-for node in nodes:
-    X,Y,Z = node
-    nodesString= "X("+str(i)+",:) = ["+str(X)+" "+str(Y)+"];"
-    MatLabNodes=MatLabNodes+nodesString+"\n"
-    i+=1
-MatLabNodes=MatLabNodes+"nno="+str(i-1)+";"
-
-i=1
-MatLabElements=""
-ESI=StartIndex
-EEI=EndIndex
-for j in range(len(ESI)):
-    elementString= "T("+str(i)+",:) = ["+str(ESI[j]+1)+" "+str(EEI[j]+1)+"];"
-    MatLabElements=MatLabElements+elementString+"\n"
-    i+=1
-MatLabElements=MatLabElements+"nel="+str(i-1)+";"
-
-
-ESI=StartIndex
-EEI=EndIndex
-nodecount=max(ESI+EEI)-min(ESI+EEI)+1
-dofcount=nodecount*3
-
-uninodes=[]
-doflist=[]
-DOFSlist=[]
-rngstart=1
-#Define no-hinge DOFS
-for i in range(len(ESI)):
-    if uninodes.count(ESI[i])==0:
-        uninodes.append(ESI[i])
-        dofstart=range(rngstart,rngstart+3)
-        doflist.append(dofstart)
-        rngstart=rngstart+3
-    else:
-        dofstart=doflist[uninodes.index(ESI[i])]
+if len(InputCurves)<>0:
+    curves=SafeExplodeCrv(InputCurves)
     
-    if uninodes.count(EEI[i])==0:
-        uninodes.append(EEI[i])
-        dofend=range(rngstart,rngstart+3)
-        doflist.append(dofend)
-        rngstart=rngstart+3
+    Elements=[]
+    Nodes=[]
+    for curve in curves:
+        Elements.append(rs.AddLine(rs.CurveStartPoint(curve),rs.CurveEndPoint(curve)))
+    
+    if sortElements:
+        Elements=SortCurvesMid(Elements)
+    if sortNodes:
+        Nodes,Elements=SortEndPtsUnique(Elements)
     else:
-        dofend=doflist[uninodes.index(EEI[i])]
-    DOFS=dofstart+dofend
-    DOFSlist.append(DOFS)
-
-DOFSflat = [item for sublist in DOFSlist for item in sublist]
-
-DegreesOfFreedom=[]
-for defree in DOFSlist:
-    DegreesOfFreedom.append(str(defree))
-
-MatLabDOFS=""
-for k, dofree in enumerate(DegreesOfFreedom):
-    MatLabDOF= "D("+str(k+1)+",:)="+ dofree.replace(",","")+";\n"
-    MatLabDOFS=MatLabDOFS+MatLabDOF
-MatLabDOFS=MatLabDOFS+"nd="+str(max(DOFSflat))+";"
-
-NodeDOFS=[]
-for nodeNo in range(max(max(ESI),max(EEI))+1):
-    for l,sdof in enumerate(DOFSlist):
-        if nodeNo == ESI[l]:
-            NodeDOFS.append(sdof[:3])
-            break
-        elif nodeNo ==EEI[l]:
-            NodeDOFS.append(sdof[3:])
-            break
-NodeDOFS=str(NodeDOFS)
+        Nodes=EndPtsUnique(Elements)
+    
+    ElementStartIndex=[]
+    ElementEndIndex=[]
+    for element in Elements:
+        ElementStartIndex.append(rs.PointArrayClosestPoint(Nodes, rs.CurveStartPoint(element)))
+        ElementEndIndex.append(rs.PointArrayClosestPoint(Nodes, rs.CurveEndPoint(element)))
+    
+    #Preview numbering
+    midpoints=[rs.CurveMidPoint(element) for element in Elements]
+    ElementNo=TextPreview(midpoints,range(len(midpoints)))
+    NodeNo=TextPreview(Nodes,range(len(Nodes)))
+    
+    #Scale Nodes to Meter
+    for repI, node in enumerate(Nodes):
+        Nodes[repI]=node*rs.UnitScale(4)
+    
+    ElementPlanes=[]
+    for i in range(len(ElementStartIndex)):
+        xVector=rs.VectorUnitize(rs.VectorCreate(Nodes[ElementEndIndex[i]],Nodes[ElementStartIndex[i]]))
+        ElementPlanes.append(rs.PlaneFromNormal(Nodes[ElementStartIndex[i]],(0,0,1),xVector))
+    
+    #To MatLab text
+    i=1
+    MatLabNodes=""
+    for node in Nodes:
+        X,Y,Z = node
+        NodesString= "X("+str(i)+",:) = ["+str(X)+" "+str(Y)+"];"
+        MatLabNodes=MatLabNodes+NodesString+"\n"
+        i+=1
+    MatLabNodes=MatLabNodes+"nno="+str(i-1)+";"
+    
+    i=1
+    MatLabElements=""
+    ESI=ElementStartIndex
+    EEI=ElementEndIndex
+    for j in range(len(ESI)):
+        elementString= "T("+str(i)+",:) = ["+str(ESI[j]+1)+" "+str(EEI[j]+1)+"];"
+        MatLabElements=MatLabElements+elementString+"\n"
+        i+=1
+    MatLabElements=MatLabElements+"nel="+str(i-1)+";"
+    
+    nodecount=max(ESI+EEI)-min(ESI+EEI)+1
+    dofcount=nodecount*3
+    
+    uniNodes=[]
+    doflist=[]
+    DOFSlist=[]
+    rngstart=1
+    #Define no-hinge DOFS
+    for i in range(len(ESI)):
+        if uniNodes.count(ESI[i])==0:
+            uniNodes.append(ESI[i])
+            dofstart=range(rngstart,rngstart+3)
+            doflist.append(dofstart)
+            rngstart=rngstart+3
+        else:
+            dofstart=doflist[uniNodes.index(ESI[i])]
+        
+        if uniNodes.count(EEI[i])==0:
+            uniNodes.append(EEI[i])
+            dofend=range(rngstart,rngstart+3)
+            doflist.append(dofend)
+            rngstart=rngstart+3
+        else:
+            dofend=doflist[uniNodes.index(EEI[i])]
+        DOFS=dofstart+dofend
+        DOFSlist.append(DOFS)
+    
+    DOFSflat = [item for sublist in DOFSlist for item in sublist]
+    
+    DegreesOfFreedom=[]
+    for defree in DOFSlist:
+        DegreesOfFreedom.append(str(defree))
+    
+    MatLabDOFS=""
+    for k, dofree in enumerate(DegreesOfFreedom):
+        MatLabDOF= "D("+str(k+1)+",:)="+ dofree.replace(",","")+";\n"
+        MatLabDOFS=MatLabDOFS+MatLabDOF
+    MatLabDOFS=MatLabDOFS+"nd="+str(max(DOFSflat))+";"
+    
+    NodeDOFS=[]
+    for nodeNo in range(max(max(ESI),max(EEI))+1):
+        for l,sdof in enumerate(DOFSlist):
+            if nodeNo == ESI[l]:
+                NodeDOFS.append(sdof[:3])
+                break
+            elif nodeNo ==EEI[l]:
+                NodeDOFS.append(sdof[3:])
+                break
+    NodeDOFS=str(NodeDOFS)

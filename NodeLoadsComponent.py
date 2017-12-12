@@ -1,15 +1,25 @@
-﻿import rhinoscriptsyntax as rs
-LNN=LoadNodesNo
-listDOFS=NodeDOFS.replace("[","").replace("]","").replace(" ","").split(",")
-if len(LNN)==0 or len(Direction)==0 or len(Newton)==0:
-    MatLabNodeLoad="bL = [];"
-else:
+﻿"""Add node loads to the system
+    Inputs:
+        NodeIndex: Index of node to add load to
+        NodeDOFS: Node degrees of freedom from element topology or ad hinge component
+        Direction: Load direction as vector
+        LoadSize: Size of load in Newton
+    Output:
+        MatLabNodeLoad: MatLab string for defining node load NOTE: Connect even if no node load are added"""
+
+__author__ = "LasseKristensen"
+
+import rhinoscriptsyntax as rs
+LNN=NodeIndex
+MatLabNodeLoads="bL = [];"
+if len(LNN)<>0 and len(Direction)<>0 and len(LoadSize)<>0 and NodeDOFS<>None:
     #Repeat last element of shortest list
+    listDOFS=NodeDOFS.replace("[","").replace("]","").replace(" ","").split(",")
     nodeLen = len(LNN)
     Direction.extend([Direction[-1]]*(nodeLen-len(Direction)))
-    Newton.extend([Newton[-1]]*(nodeLen-len(Newton)))
+    LoadSize.extend([LoadSize[-1]]*(nodeLen-len(LoadSize)))
     Direction=Direction[:nodeLen]
-    Newton=Newton[:nodeLen]
+    LoadSize=LoadSize[:nodeLen]
     
     vecX=[]
     vecY=[]
@@ -22,8 +32,8 @@ else:
     MatLabNodeLoads=""
     j=1
     for i,lnn in enumerate(LNN):
-        xstring= "bL("+str(j)+",:)=["+str(listDOFS[int(lnn)*3])+" "+str(Newton[i]*vecX[i])+"];\n"
+        xstring= "bL("+str(j)+",:)=["+str(listDOFS[int(lnn)*3])+" "+str(LoadSize[i]*vecX[i])+"];\n"
         j+=1
-        ystring= "bL("+str(j)+",:)=["+str(listDOFS[int(lnn)*3+1])+" "+str(Newton[i]*vecY[i])+"];\n"
+        ystring= "bL("+str(j)+",:)=["+str(listDOFS[int(lnn)*3+1])+" "+str(LoadSize[i]*vecY[i])+"];\n"
         j+=1
         MatLabNodeLoads=MatLabNodeLoads+xstring+ystring

@@ -1,4 +1,32 @@
-﻿import os
+﻿"""Write, run and plot the MatLab script
+    Inputs:
+        MatLabNodes: MatLab string for defining the nodes
+        MatLabElements: MatLab string for defining the elements
+        MatLabDOFS: MatLab string for defining the degrees of freedom
+        MatLabMaterial: MatLab string for defining the materials
+        MatLabSupport: MatLab string for defining the supports
+        MatLabNodeLoads: MatLab string for defining the node loads
+        MatLabElementLoad: MatLab string for defining the element loads
+        PlotScalingDeformation: Scaling factor of the node displacements in deformation plot
+        PlotScalingForces: Scaling factor of forces in the force plots
+        Run: Write and run MatLab script
+        RefreshPlots: Press this when MatLab computation is done
+    Output:
+        Info: Info
+        MLstring: Complete code written in MatLab
+        Displacements: Displacement for each degree of freedom in the system
+        ReactionForces: The three reaction forces in each of the supports
+        NormalForces: Normal forces in both ends in each of the elements
+        ShearForces: Shear forces in both ends in each of the elements
+        MomentForces: Moment forces in both ends in each of the elements
+        DeformationPlot: The deformation of the system
+        MomentPlot: The moment forces of the system
+        NormalPlot: The normal forces of the system
+        ShearPlot: The shear forces of the system"""
+
+__author__ = "LasseKristensen"
+
+import os
 import subprocess
 import Grasshopper as GH
 import rhinoscriptsyntax as rs
@@ -69,76 +97,84 @@ def plusSign(position):
     
     return plusses
 
-
-UOfolder= GH.Folders.UserObjectFolders[0]+"LKplugin\\"
-
-ML=open(UOfolder+"RammeLKpluginTemplate.m","r")
-MLstring=ML.read()
-ML.close()
-
-MLstring = MLstring.replace("MatLabNodes",MatLabNodes)
-MLstring = MLstring.replace("MatLabElements",MatLabElements)
-MLstring = MLstring.replace("MatLabDOFS",MatLabDOFS)
-MLstring = MLstring.replace("MatLabMaterial",MatLabMaterial)
-MLstring = MLstring.replace("MatLabSupport",MatLabSupport)
-MLstring = MLstring.replace("MatLabNodeLoads",MatLabNodeLoads)
-MLstring = MLstring.replace("MatLabElementLoad",MatLabElementLoad)
-MLstring = MLstring.replace("MatLabElementLoad",MatLabElementLoad)
-MLstring = MLstring.replace("PlotScalingDeformation",str(PlotScalingDeformation[0]))
-MLstring = MLstring.replace("PlotScalingForces",str(PlotScalingForces[0]))
-
-tempFPath=UOfolder+"TempMLfile.m"
-
-mFile=open(tempFPath,"w")
-mFile.write(MLstring)
-mFile.close()
-
-resultfile=UOfolder+"result.txt"
-deformationfile=UOfolder+"deformation.txt"
-momentfile=UOfolder+"momentforces.txt"
-normalfile=UOfolder+"normalforces.txt"
-shearfile=UOfolder+"shearforces.txt"
-momentsignfile=UOfolder+"momentsignforces.txt"
-normalsignfile=UOfolder+"normalsignforces.txt"
-shearsignfile=UOfolder+"shearsignforces.txt"
-Info=[]
-
-if matlabIsInstalled():
-    if run:
-        P=subprocess.Popen("matlab -nosplash -nodesktop -minimize -r \"run "+tempFPath+"\"")
+if (MatLabNodes==None or 
+MatLabElements==None or
+MatLabDOFS==None or
+MatLabMateria==None or
+MatLabSupport==None or
+MatLabNodeLoads==None or
+MatLabElementLoad==None):
+    Info="All MatLab string inputs must be connected"
 else:
-    Info.append("MatLab not installed")
-
-if os.path.isfile(resultfile) and os.path.isfile(deformationfile):
-    if True:
-        result=open(resultfile,"r")
-        resultstring=result.read()
-        result.close()
-        resList=resultstring.split(",")
-        V=[]
-        Ru=[]
-        F1=[]
-        F2=[]
-        M=[]
-        listlist=[V,Ru,F1,F2,M]
-        listCount=0
-        for res in resList:
-            if res[:1]=="/":
-                listCount+=1
-                res=res.replace("/","")
-            listlist[listCount].append(res)
-        M=M[:-1]
-        DeformationPlot=readPlotFile(deformationfile)
-        MomentPlot=readPlotFile(momentfile)+plusSign(readPlotSignFile(momentsignfile))
-        ShearPlot=readPlotFile(shearfile)+plusSign(readPlotSignFile(shearsignfile))
-        NormalPlot=readPlotFile(normalfile)+plusSign(readPlotSignFile(normalsignfile))
-    Displacements=V
-    ReactionForces=Ru
-    NormalForces=[]
-    [NormalForces.append(str(F1[i])+", "+str(F1[i+5])) for i in range(int(len(F1)/2))]
-    ShearForces=[]
-    [ShearForces.append(str(F2[i])+", "+str(F2[i+5])) for i in range(int(len(F1)/2))]
-    MomentForces=[]
-    [MomentForces.append(str(M[i])+", "+str(M[i+5])) for i in range(int(len(F1)/2))]
-else:
-    Info.append("Deformation and resultsfile not found")
+    UOfolder= GH.Folders.UserObjectFolders[0]+"LKplugin\\"
+    
+    ML=open(UOfolder+"RammeLKpluginTemplate.m","r")
+    MLstring=ML.read()
+    ML.close()
+    
+    MLstring = MLstring.replace("MatLabNodes",MatLabNodes)
+    MLstring = MLstring.replace("MatLabElements",MatLabElements)
+    MLstring = MLstring.replace("MatLabDOFS",MatLabDOFS)
+    MLstring = MLstring.replace("MatLabMaterial",MatLabMaterial)
+    MLstring = MLstring.replace("MatLabSupport",MatLabSupport)
+    MLstring = MLstring.replace("MatLabNodeLoads",MatLabNodeLoads)
+    MLstring = MLstring.replace("MatLabElementLoad",MatLabElementLoad)
+    MLstring = MLstring.replace("MatLabElementLoad",MatLabElementLoad)
+    MLstring = MLstring.replace("PlotScalingDeformation",str(PlotScalingDeformation[0]))
+    MLstring = MLstring.replace("PlotScalingForces",str(PlotScalingForces[0]))
+    
+    tempFPath=UOfolder+"TempMLfile.m"
+    
+    mFile=open(tempFPath,"w")
+    mFile.write(MLstring)
+    mFile.close()
+    
+    resultfile=UOfolder+"result.txt"
+    deformationfile=UOfolder+"deformation.txt"
+    momentfile=UOfolder+"momentforces.txt"
+    normalfile=UOfolder+"normalforces.txt"
+    shearfile=UOfolder+"shearforces.txt"
+    momentsignfile=UOfolder+"momentsignforces.txt"
+    normalsignfile=UOfolder+"normalsignforces.txt"
+    shearsignfile=UOfolder+"shearsignforces.txt"
+    Info=[]
+    
+    if matlabIsInstalled():
+        if Run:
+            P=subprocess.Popen("matlab -nosplash -nodesktop -minimize -r \"run "+tempFPath+"\"")
+    else:
+        Info.append("MatLab not installed")
+    
+    if os.path.isfile(resultfile) and os.path.isfile(deformationfile):
+        if True:
+            result=open(resultfile,"r")
+            resultstring=result.read()
+            result.close()
+            resList=resultstring.split(",")
+            V=[]
+            Ru=[]
+            F1=[]
+            F2=[]
+            M=[]
+            listlist=[V,Ru,F1,F2,M]
+            listCount=0
+            for res in resList:
+                if res[:1]=="/":
+                    listCount+=1
+                    res=res.replace("/","")
+                listlist[listCount].append(res)
+            M=M[:-1]
+            DeformationPlot=readPlotFile(deformationfile)
+            MomentPlot=readPlotFile(momentfile)+plusSign(readPlotSignFile(momentsignfile))
+            ShearPlot=readPlotFile(shearfile)+plusSign(readPlotSignFile(shearsignfile))
+            NormalPlot=readPlotFile(normalfile)+plusSign(readPlotSignFile(normalsignfile))
+        Displacements=V
+        ReactionForces=Ru
+        NormalForces=[]
+        [NormalForces.append(str(F1[i])+", "+str(F1[i+5])) for i in range(int(len(F1)/2))]
+        ShearForces=[]
+        [ShearForces.append(str(F2[i])+", "+str(F2[i+5])) for i in range(int(len(F1)/2))]
+        MomentForces=[]
+        [MomentForces.append(str(M[i])+", "+str(M[i+5])) for i in range(int(len(F1)/2))]
+    else:
+        Info.append("Deformation and resultsfile not found")
