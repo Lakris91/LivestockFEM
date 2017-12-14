@@ -184,10 +184,11 @@ else:
         Displacements=V
         ReactionForces=Ru
         NormalForces=[]
-        [NormalForces.append(str(F1[i])+", "+str(F1[i+5])) for i in range(int(len(F1)/2))]
+        eleCount=int(len(F1)/2)
+        [NormalForces.append(str(F1[i])+", "+str(F1[i+eleCount])) for i in range(int(len(F1)/2))]
         ShearForces=[]
-        [ShearForces.append(str(F2[i])+", "+str(F2[i+5])) for i in range(int(len(F1)/2))]
+        [ShearForces.append(str(F2[i])+", "+str(F2[i+eleCount])) for i in range(int(len(F2)/2))]
         MomentForces=[]
-        [MomentForces.append(str(M[i])+", "+str(M[i+5])) for i in range(int(len(F1)/2))]
+        [MomentForces.append(str(M[i])+", "+str(M[i+eleCount])) for i in range(int(len(M)/2))]
     else:
         Info.append("Deformation and resultsfile not found")

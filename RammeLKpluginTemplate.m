@@ -74,8 +74,7 @@ Vf = Kff\(Rf-Kfu*Vu);            % frie knudeflytninger
 Ru = Kfu'*Vf+Kuu*Vu;             % reaktioner
 V(df) = Vf;
 V(du) = Vu;
-%%disp('Flytninger:'); V = V       % udskriv flytninger
-%%disp('Reaktioner:'); Ru = Ru     % udskriv rekationer
+
 plotDof(X,T,D,V,nel,Vskala)      % plot deformeret gitter
 
 % Beregn snitkræfter 
@@ -89,20 +88,22 @@ for el = 1:nel
     M(el,:) = m;
 end
 
+%%disp('Flytninger:'); V = V       
+%%disp('Reaktioner:'); Ru = Ru     
 %%disp('Normalkræfter:'); F1 = F1
 %%disp('Forskydningskræfter:'); F2 = F2
 %%disp('Momenter:'); M = M
 
 fileID = fopen('result.txt','w');
-fprintf(fileID,'%0.4f,',V);
+fprintf(fileID,'%0.10f,',V);
 fprintf(fileID,'/');
-fprintf(fileID,'%0.4f,',Ru);
+fprintf(fileID,'%0.10f,',Ru);
 fprintf(fileID,'/');
-fprintf(fileID,'%0.4f,',F1);
+fprintf(fileID,'%0.10f,',F1);
 fprintf(fileID,'/');
-fprintf(fileID,'%0.4f,',F2);
+fprintf(fileID,'%0.10f,',F2);
 fprintf(fileID,'/');
-fprintf(fileID,'%0.4f,',M);
+fprintf(fileID,'%0.10f,',M);
 fclose(fileID);
 
 plotS(X,T,nel,F1,1,dL,Sskala)
