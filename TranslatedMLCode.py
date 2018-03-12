@@ -90,6 +90,89 @@ def forceCalc(X1,X2,Ge,Ve,dLe):
     m  = array([-re[2],re[5]])
     return f1,f2,m
 
+def writeDofPlot(X,T,D,V,skala,mFile):
+    for el in range(len(T)):
+        X1 = X[T[el][0]]
+        X2 = X[T[el][1]]
+        A,L = Abeam(X1,X2)
+        #dan transformationsmatrix for flytninger
+        Au=A[0:2,0:2]
+        #hent lokale flytninger
+        v=V[D[el]]
+        #koordinater plus flytninger
+        nrp=20
+        Xs=np.zeros((2,nrp))
+        for i in range(1,nrp+1):
+            s=(i-1)/(nrp-1)
+            N=array([   [1-s,   0,                  0,                    s,    0,               0             ],
+                        [0,     1-3*s**2+2*s**3,    (s-2*s**2+s**3)*L,    0,    3*s**2-2*s**3,    (-s**2+s**3)*L]])
+            Xs=np.transpose(X[T[el][0]])*(1-s)+np.transpose(X[T[el][1]])*s+np.transpose(skala*(np.transpose(Au)).dot(N).dot(A).dot(v))#*N*A*v
+            Xs=np.transpose(Xs)
+            if not (el==len(T)-1 and i==nrp):
+                mFile.write(str(Xs[0][0])+","+str(Xs[1][0])+"|")
+            else:
+                mFile.write(str(Xs[0][0])+","+str(Xs[1][0])+"\n")
+    return 0
+
+def writeForcePlots(X,T,S,s,dL,skala,mFile):
+    plusStr=""
+    for el in range(len(T)):
+        # retningsvektor
+        n = X[T[el][1]]-X[T[el][0]]
+        # elementlængde
+        L = sqrt(dot(n,n))
+        # enhedsvektor
+        n = n/L
+    
+        F1 = array([-n[1],n[0]])*S[el][0]*skala
+        F2 = array([-n[1],n[0]])*S[el][1]*skala
+        x1 = X[T[el][0]][0]
+        x2 = X[T[el][1]][0]
+        y1 = X[T[el][0]][1]
+        y2 = X[T[el][1]][1]
+        xm = (x1+x2)/2-n[1]*L/15
+        ym = (y1+y2)/2+n[0]*L/15
+        if not el==len(T)-1:
+            plusStr+=str(xm)+","+str(ym)+"|"
+        else:
+            plusStr+=str(xm)+","+str(ym)+"\n"
+
+        if s == 3:
+            p = dL[el][1]
+            m = -p*L**2/2
+            nrp = 20
+            Xp = np.zeros((nrp+4,1))
+            Yp = np.zeros((nrp+4,1))
+            Xp[0] = x1  
+            Xp[1] = x1+F1[0]
+            Yp[0] = y1  
+            Yp[1] = y1+F1[1]
+            Xp[nrp+3] = x2
+            Xp[nrp+2] = x2+F2[0]
+            Yp[nrp+3] = y2
+            Yp[nrp+2] = y2+F2[1]
+            
+            for i in range(1,nrp+1):
+                x = i/(nrp+1)
+                mx = m*x*(1-x)
+                m1 = array([-n[1],n[0]])*mx*skala
+                Xp[i+1] = Xp[1]+i*(Xp[nrp+2]-Xp[1])/(nrp+1)+m1[0]
+                Yp[i+1] = Yp[1]+i*(Yp[nrp+2]-Yp[1])/(nrp+1)+m1[1]
+            Xp=np.transpose(Xp)[0]
+            Yp=np.transpose(Yp)[0]
+        else:
+            Xp = array([x1,x1+F1[0],x2+F2[0],x2])
+            Yp = array([y1,y1+F1[1],y2+F2[1],y2])
+        for i in range(len(Xp)):
+            if not i == len(Xp)-1:
+                mFile.write(str(Xp[i])+","+str(Yp[i])+"|")
+            elif i == len(Xp)-1 and el==len(T)-1:
+                mFile.write(str(Xp[i])+","+str(Yp[i])+"\n")
+            else:
+                mFile.write(str(Xp[i])+","+str(Yp[i])+"_")
+    mFile.write(plusStr)
+    return 0
+
 def FEM_frame():
     #Initiation data from GH
     a = 3      # [m]
@@ -99,22 +182,18 @@ def FEM_frame():
     A = 1e-3   # [m2]
     I = 2e-6   # [m4]
     
-    X=array([[0,0],[0,a],[a,a],[a,0]])
-    nno=len(X)
+    X=[[0,0],[0,a],[a,a],[a,0]]
     
-    T=array([[0,1],[1,2],[2,3]])
-    #nel=len(T)
+    T=[[0,1],[1,2],[2,3]]
     
-    D = array([[0,1,2,3,4,5],[3,4,5,6,7,8],[6,7,12,9,10,11]])
-    #nd=np.max(D)
+    D=[[0,1,2,3,4,5],[3,4,5,6,7,8],[6,7,12,9,10,11]]
     
-    G= array([[E,A,I],[E,A,I],[E,A,I]])
+    G=[[E,A,I],[E,A,I],[E,A,I]]
     
-    U=array([0,1,2,9,10,11])
+    U=[0,1,2,9,10,11]
     
     bL=[]
     bL.append([3,bP])
-    bL=array(bL)
     
     dL = np.zeros((len(T),2));
     dL[1]=[1,-dP]
@@ -123,6 +202,16 @@ def FEM_frame():
     Sskala = 0.3e-4
     
     #Program
+    
+    X=array(X)
+    T=array(T)
+    D=array(D)
+    G=array(G)
+    U=array(U)
+    bL=array(bL)
+    
+    #nel=len(T)
+    #nd=np.max(D)
     
     #System stiffness matrix
     K=np.zeros((np.max(D)+1,np.max(D)+1))
@@ -151,7 +240,6 @@ def FEM_frame():
         d=int(bLs[0])
         R[d]=R[d]+bLs[1]
         
-    
     dof=range(np.max(D)+1)
     du=U
     df=np.setdiff1d(dof,du)
@@ -165,10 +253,6 @@ def FEM_frame():
     Ru = np.transpose(Kfu).dot(Vf)+Kuu.dot(Vu)
     V[df]=Vf
     V[du]=Vu
-    print("Displacements:")
-    print(V)
-    print("Reaction forces:")
-    print(Ru)
     
     #Plot displacement
     #Calculate forces
@@ -184,12 +268,37 @@ def FEM_frame():
         F2[el]=np.transpose(f2)
         M[el]=np.transpose(m)
     
-    print("Normalforces:")
-    print(F1)
-    print("Shearforces:")
-    print(F2)
-    print("Moment:")
-    print(M)    
+    mFile=open("result_python.txt","w")
+    for i,v in enumerate(V):
+        if not i == len(V)-1:
+            mFile.write(str(v[0])+",")
+        else:
+            mFile.write(str(v[0])+"\n")
+    for i,ru in enumerate(Ru):
+        if not i == len(Ru)-1:
+            mFile.write(str(ru[0])+",")
+        else:
+            mFile.write(str(ru[0])+"\n")
+    for i,f1 in enumerate(F1):
+        if not i == len(F1)-1:
+            mFile.write(str(f1[0])+","+str(f1[1])+"|")
+        else:
+            mFile.write(str(f1[0])+","+str(f1[1])+"\n")
+    for i,f2 in enumerate(F2):
+        if not i == len(F2)-1:
+            mFile.write(str(f2[0])+","+str(f2[1])+"|")
+        else:
+            mFile.write(str(f2[0])+","+str(f2[1])+"\n")
+    for i,m in enumerate(M):
+        if not i == len(M)-1:
+            mFile.write(str(m[0])+","+str(m[1])+"|")
+        else:
+            mFile.write(str(m[0])+","+str(m[1])+"\n")
+    writeDofPlot(X,T,D,V,Vskala,mFile)
+    writeForcePlots(X,T,F1,1,dL,Sskala,mFile)
+    writeForcePlots(X,T,F2,2,dL,Sskala,mFile)
+    writeForcePlots(X,T,M,3,dL,Sskala,mFile)
+    mFile.close()    
     return 0
 
 FEM_frame()
