@@ -100,18 +100,25 @@ def writeDofPlot(X,T,D,V,skala,mFile):
         #hent lokale flytninger
         v=V[D[el]]
         #koordinater plus flytninger
-        nrp=20
+        nrp=10
         Xs=np.zeros((2,nrp))
         for i in range(1,nrp+1):
+            print(i)
             s=(i-1)/(nrp-1)
             N=array([   [1-s,   0,                  0,                    s,    0,               0             ],
                         [0,     1-3*s**2+2*s**3,    (s-2*s**2+s**3)*L,    0,    3*s**2-2*s**3,    (-s**2+s**3)*L]])
-            Xs=np.transpose(X[T[el][0]])*(1-s)+np.transpose(X[T[el][1]])*s+np.transpose(skala*(np.transpose(Au)).dot(N).dot(A).dot(v))#*N*A*v
+            Xs=np.transpose(X[T[el][0]])*(1-s)+np.transpose(X[T[el][1]])*s+np.transpose(skala*(np.transpose(Au)).dot(N).dot(A).dot(v))
             Xs=np.transpose(Xs)
-            if not (el==len(T)-1 and i==nrp):
-                mFile.write(str(Xs[0][0])+","+str(Xs[1][0])+"|")
-            else:
+            if el==len(T)-1 and i==nrp:
                 mFile.write(str(Xs[0][0])+","+str(Xs[1][0])+"\n")
+                print("n")
+            elif i==nrp:
+                mFile.write(str(Xs[0][0])+","+str(Xs[1][0])+"_")
+                print("_")
+            else:
+                mFile.write(str(Xs[0][0])+","+str(Xs[1][0])+"|")
+                print("|")
+
     return 0
 
 def writeForcePlots(X,T,S,s,dL,skala,mFile):
