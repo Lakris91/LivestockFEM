@@ -44,16 +44,16 @@ def kbeam(X1,X2,G):
     k = np.transpose(A).dot(k).dot(A)
     return k
 
-def rbeam(X1,X2,dLe):
+def rbeam(X1,X2,dLe,ret):
     #Opstil elementlastvektor 
     #dan transformationsmatrix
     A,L = Abeam(X1,X2)
     #opstil r efter lokale retninger
     r = np.zeros((6,1))
-    if dLe[0] == 0:
-        p = dLe[1]*L/2
+    if ret == 0:
+        p = dLe[0]*L/2
         r = np.transpose([p,0,0,p,0,0])
-    elif dLe[0] == 1:
+    elif ret == 1:
         p = dLe[1]*L/2
         m = dLe[1]*L**2/12
         r = np.transpose([0,p,m,0,p,-m])
@@ -63,7 +63,7 @@ def rbeam(X1,X2,dLe):
     r = dot(np.transpose(A),r);
     return r
 
-def forceCalc(X1,X2,Ge,Ve,dLe):
+def forceCalc(X1,X2,Ge,Ve,dLe,ret):
     #Calculate internal forces in an element 
     #f1: normalforce
     #f2: shearforce
@@ -75,12 +75,12 @@ def forceCalc(X1,X2,Ge,Ve,dLe):
     #calc local nodeforcevector
     re = A.dot(k).dot(Ve)
     #opstil belastningsvektor efter lokale retninger
-    if dLe[0] == 1:
+    if ret == 1:
         p = dLe[1]*L/2
         m = dLe[1]*L**2/12
         r = np.transpose(array([[0,p,m,0,p,-m]]))
-    elif dLe[0] == 0:
-        p = dLe[1]*L/2
+    elif ret == 0:
+        p = dLe[0]*L/2
         r = np.transpose(array([[p,0,0,p,0,0]]))
     else:
         r = np.transpose(array([[0,0,0,0,0,0]]))
@@ -234,13 +234,22 @@ def FEM_frame():
     R = np.zeros((np.max(D)+1,1)); 
     for el in range(len(T)):
         dLe=dL[el]
-        if dLe[1]!=0:
+        if dLe[0]!=0:
             X1 = X[T[el][0]]
             X2 = X[T[el][1]]
-            r=rbeam(X1,X2,dLe)
+            r=rbeam(X1,X2,dLe,0)
             de=D[el]
             for i,dei in enumerate(de):
                 R[dei]+=r[i]
+        
+        if dLe[1]!=0:
+            X1 = X[T[el][0]]
+            X2 = X[T[el][1]]
+            r=rbeam(X1,X2,dLe,1)
+            de=D[el]
+            for i,dei in enumerate(de):
+                R[dei]+=r[i]
+    
     for bLs in bL:
         d=int(bLs[0])
         R[d]=R[d]+bLs[1]
@@ -264,14 +273,16 @@ def FEM_frame():
     F1=np.zeros((len(T),2))
     F2=np.zeros((len(T),2))
     M=np.zeros((len(T),2))
+    
     for el in range(len(T)):
         X1 = X[T[el][0]]
         X2 = X[T[el][1]]
         de=D[el]
-        f1,f2,m=forceCalc(X1,X2,G[el],V[de],dL[el])
-        F1[el]=np.transpose(f1)
-        F2[el]=np.transpose(f2)
-        M[el]=np.transpose(m)
+        f10,f20,m0=forceCalc(X1,X2,G[el],V[de],dL[el],0)
+        f11,f21,m1=forceCalc(X1,X2,G[el],V[de],dL[el],1)
+        F1[el]=np.transpose(f10)+np.transpose(f11)
+        F2[el]=np.transpose(f20)+np.transpose(f21)
+        M[el]=np.transpose(m0)+np.transpose(m1)
     
     mFile=open("UOfolder","w")
     for i,v in enumerate(V):
