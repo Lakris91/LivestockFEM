@@ -492,10 +492,10 @@ def previewNodLoads(PyNodes,PyNodeLoads,Scale):
             blist[node]=(nx,ny,0)
         else:
             nx,ny,_=alist[node]
-        dir=int(dof)%2
-        if dir ==1:
+        dir=int(dof)%3
+        if dir ==0:
             nx=nx-float(lsize)*Scale
-        elif dir==0:
+        elif dir==1:
             ny=ny-float(lsize)*Scale
         alist[node]=(nx,ny,0)
     for j,al in enumerate(alist):
