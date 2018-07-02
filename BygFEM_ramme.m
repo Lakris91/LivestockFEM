@@ -58,7 +58,6 @@ bL = [];
 %dL(el,:)=[størrelse i lokal_retning 1, størrelse i lokal_retning 2]
 dL = zeros(nel,2);
 dL(3,:)=[5000 5000];
-%dL(1,:)=[2 -10000.0];
 
 
 %disp(dL)
@@ -193,15 +192,19 @@ function [f1 f2 m] = S(X1,X2,Ge,Ve,dLe,ret)
 [A L] = Abeam(X1,X2);
 % dan elementstivhedsmatrix
 k = kbeam(X1,X2,Ge);
-% beregn lokal knudekraftvektor
-re = A*k*Ve;
 % opstil belastningsvektor efter lokale retninger
 if ret == 2
+  % beregn lokal knudekraftvektor  
+  Ve2=[0 Ve(2) Ve(3) 0 Ve(5) Ve(6)]';
+  re = A*k*Ve2;
   p = dLe(2)*L/2;
   m = dLe(2)*L^2/12;
   disp(m)
   r = [0 p m 0 p -m]';
 elseif ret == 1
+  % beregn lokal knudekraftvektor
+  Ve1=[Ve(1) 0 0 Ve(4) 0 0]';
+  re = A*k*Ve1;
   p = dLe(1)*L/2;
   r = [p 0 0 p 0 0]';
 else
