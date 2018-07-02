@@ -57,7 +57,7 @@ bL = [];
 % elementlaste (domain Load): dL(el,:)=[lokal_retning, størrelse]
 %dL(el,:)=[størrelse i lokal_retning 1, størrelse i lokal_retning 2]
 dL = zeros(nel,2);
-dL(3,:)=[5000 5000];
+dL(3,:)=[0 5000];
 %dL(1,:)=[2 -10000.0];
 
 
