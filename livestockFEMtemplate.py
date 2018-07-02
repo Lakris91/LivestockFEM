@@ -71,14 +71,26 @@ def forceCalc(X1,X2,Ge,Ve,dLe,ret):
     A,L = Abeam(X1,X2)
     #element stiffness matrix
     k = kbeam(X1,X2,Ge)
-    #calc local nodeforcevector
-    re = A.dot(k).dot(Ve)
     #opstil belastningsvektor efter lokale retninger
     if ret == 1:
+        #calc local nodeforcevector
+        Ve1=Ve
+        Ve1[0]=0
+        Ve1[3]=0
+        re = A.dot(k).dot(Ve1)
+        #print(re)
         p = dLe[1]*L/2
         m = dLe[1]*L**2/12
         r = np.transpose(array([[0,p,m,0,p,-m]]))
     elif ret == 0:
+        #calc local nodeforcevector
+        Ve2=Ve
+        Ve2[1]=0
+        Ve2[2]=0
+        Ve2[4]=0
+        Ve2[5]=0 
+        re = A.dot(k).dot(Ve2)
+        #print(re)
         p = dLe[0]*L/2
         r = np.transpose(array([[p,0,0,p,0,0]]))
     else:
