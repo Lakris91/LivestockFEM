@@ -28,7 +28,7 @@ def combineNodLoads(PyNodeLoad):
                 PNL.append([int(DOF),float(lsize)])
             else:
                 PNL[InList.index(int(DOF))]= [int(DOF),PNL[InList.index(int(DOF))][1]+float(lsize)]
-        PNL=str(PNL)
+    PNL=str(PNL)
     return PNL
 
 def defineEleLoad(ElementIndex,PyNodes,PyElements,Direction,LoadSize,Global):
