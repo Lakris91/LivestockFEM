@@ -14,42 +14,53 @@ I = 2e-6;   % [m4]
 X(1,:) = [0 0]; 
 X(2,:) = [0 a]; 
 X(3,:) = [a a]; 
-X(4,:) = [a 0]; 
+X(4,:) = [a 0];
+X(5,:) = [2*a a];
+X(6,:) = [2*a 0];
 nno = size(X,1);    % number of nodes, antal knuder i systemet
 
-% elementer: T(el,:)=[startknude slutknude]        
+% elementer: T(el,:)=[startknude slutknude]       new 
 T(1,:) = [1 2];
 T(2,:) = [2 3];
 T(3,:) = [3 4];
+T(4,:) = [3 5];
+T(5,:) = [5 6];
 nel = size(T,1);    % number of elements, antal elementer i systemet
 
 % frihedsgrader, globale dof: D(el,:)=[V1 V2 V3 V4 V5 V6]
 D(1,:) = [1 2 3 4 5 6];
 D(2,:) = [4 5 6 7 8 9];
-D(3,:) = [7 8 13 10 11 12]; 
+D(3,:) = [7 8 9 10 11 12];
+D(4,:) = [7 8 9 13 14 15]; 
+D(5,:) = [13 14 15 16 17 18]; 
 nd=max(max(D));     % number of dofs, antal frihedsgrader
 
 % materialer: G(el,:)=[E-modul, tværsnitsareal, inertimoment]
 G(1,:) = [E A I];
 G(2,:) = [E A I];
 G(3,:) = [E A I];
+G(4,:) = [E A I];
+G(5,:) = [E A I];
 
 % understøtninger: U(i)=global dof
 U(1) = 1;
 U(2) = 2;
 U(3) = 3;
-U(4) = 10;
-U(5) = 11;
-U(6) = 12;
+U(4) = 16;
+U(5) = 17;
+U(6) = 18;
 
 % knudelaste (boundary Load): bL(i,:)=[global_dof, størrelse]
 % bL = []; hvis ingen knudelast
-bL(1,:) = [4 P];
+bL = [];
 
 % elementlaste (domain Load): dL(el,:)=[lokal_retning, størrelse]
+%dL(el,:)=[størrelse i lokal_retning 1, størrelse i lokal_retning 2]
 dL = zeros(nel,2);
-dL(2,:) = [2 -p];
+dL(3,:)=[5000 5000];
 
+
+%disp(dL)
 % skalering af plot
 Vskala = 2e0;       % deformationer
 Sskala = 0.3e-4;    % snitkræfter
@@ -73,10 +84,17 @@ end
 R = zeros(nd,1);                       % initialiser R
 for el = 1:nel
   dLe = dL(el,:);
-  if dLe(1) > 0
+  if dLe(1) ~= 0
     no1 = T(el,1);  no2 = T(el,2);     % startknude/slutknude
     X1 = X(no1,:);  X2 = X(no2,:);     % koordinater til start-/slutknude
-    r = rbeam(X1,X2,dLe);              % elementlastvektor
+    r = rbeam(X1,X2,dLe,1);              % elementlastvektor
+    de = D(el,:);                      % knudeflytningsnumre, indexarray
+    R(de) = R(de) + r;                 % r lægges til R
+  end
+  if dLe(2) ~= 0
+    no1 = T(el,1);  no2 = T(el,2);     % startknude/slutknude
+    X1 = X(no1,:);  X2 = X(no2,:);     % koordinater til start-/slutknude
+    r = rbeam(X1,X2,dLe,2);              % elementlastvektor
     de = D(el,:);                      % knudeflytningsnumre, indexarray
     R(de) = R(de) + r;                 % r lægges til R
   end
@@ -110,10 +128,11 @@ for el = 1:nel
     no1 = T(el,1);  no2 = T(el,2);     % startknude/slutknude
     X1 = X(no1,:);  X2 = X(no2,:);     % koordinater til start-/slutknude
     de = D(el,:);                      % indexarray
-    [f1 f2 m] = S(X1,X2,G(el,:),V(de),dL(el,:));  % beregn snitkræfter
-    F1(el,:) = f1;
-    F2(el,:) = f2;
-    M(el,:) = m;
+    [f10 f20 m0] = S(X1,X2,G(el,:),V(de),dL(el,:),1);  % beregn snitkræfter
+    [f11 f21 m1] = S(X1,X2,G(el,:),V(de),dL(el,:),2);  % beregn snitkræfter
+    F1(el,:) = f10+f11;
+    F2(el,:) = f20+f21;
+    M(el,:) = m0+m1;
 end
 
 disp('Normalkræfter:'); F1 = F1
@@ -145,16 +164,16 @@ k = [ EA/L     0         0     -EA/L      0         0
 k = A'*k*A;
 end
 
-function r = rbeam(X1,X2,dLe)
+function r = rbeam(X1,X2,dLe,ret)
 % Opstil elementlastvektor 
 % dan transformationsmatrix
 [A L] = Abeam(X1,X2);
 % opstil r efter lokale retninger
 r = zeros(6,1);
-if dLe(1) == 1
-  p = dLe(2)*L/2;
+if ret == 1
+  p = dLe(1)*L/2;
   r = [p 0 0 p 0 0]';
-elseif dLe(1) == 2
+elseif ret == 2
   p = dLe(2)*L/2;
   m = dLe(2)*L^2/12;
   r = [0 p m 0 p -m]';
@@ -164,7 +183,7 @@ end
 r = A'*r;
 end
 
-function [f1 f2 m] = S(X1,X2,Ge,Ve,dLe)
+function [f1 f2 m] = S(X1,X2,Ge,Ve,dLe,ret)
 % Beregn snitkræfter i element: 
 % f1: normalkraft 
 % f2: forskydningskraft
@@ -173,23 +192,33 @@ function [f1 f2 m] = S(X1,X2,Ge,Ve,dLe)
 [A L] = Abeam(X1,X2);
 % dan elementstivhedsmatrix
 k = kbeam(X1,X2,Ge);
-% beregn lokal knudekraftvektor
-re = A*k*Ve;
 % opstil belastningsvektor efter lokale retninger
-if dLe(1) == 2
+if ret == 2
+  % beregn lokal knudekraftvektor  
+  Ve2=[0 Ve(2) Ve(3) 0 Ve(5) Ve(6)]';
+  re = A*k*Ve2;
   p = dLe(2)*L/2;
   m = dLe(2)*L^2/12;
+  disp(m)
   r = [0 p m 0 p -m]';
-elseif dLe(1) == 1
-  p = dLe(2)*L/2;
+elseif ret == 1
+  % beregn lokal knudekraftvektor
+  Ve1=[Ve(1) 0 0 Ve(4) 0 0]';
+  re = A*k*Ve1;
+  p = dLe(1)*L/2;
   r = [p 0 0 p 0 0]';
 else
   r = [0 0 0 0 0 0]';
 end
+
 re = re-r;
+
 f1 = [-re(1)  re(4)];
 f2 = [ re(2) -re(5)];
 m  = [-re(3)  re(6)];
+%disp(f1);
+%disp(f2);
+%disp(m);
 end
 
 function [A L] = Abeam(X1,X2)
@@ -243,6 +272,7 @@ for el = 1:nel
   Xs=zeros(2,nrp);
   for i=1:nrp
     s=(i-1)/(nrp-1);
+    %disp(s);
     N=[1-s             0               0 s           0            0;
        0   1-3*s^2+2*s^3 (s-2*s^2+s^3)*L 0 3*s^2-2*s^3 (-s^2+s^3)*L];
     Xs(:,i)=X(T(el,1),:)'*(1-s)+X(T(el,2),:)'*s+skala*Au'*N*A*v;
@@ -282,6 +312,7 @@ for el = 1:nel
   if s == 3
     p = dL(el,2);
     m = -p*L^2/2;
+    disp(m);
     np = 9;             % antal mellempunkter
     Xp = zeros(np+4,1);
     Yp = zeros(np+4,1);
