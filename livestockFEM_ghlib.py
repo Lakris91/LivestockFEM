@@ -351,7 +351,7 @@ def EvalForces(Geometry,Plot,PlusPosition,PlotScaling):
     for i,fPl in enumerate(Plot):
         dist=[]
         line=[]
-        fVerts=rs.PolylineVertices(fPl)[1:-1]
+        fVerts=rs.PolylineVertices(fPl)
         if len(fVerts)==2:
             fVerts=rs.DivideCurve(rs.AddLine(fVerts[0],fVerts[1]),20)
         PlusSide=LineSide(Geometry[i],PlusPosition[i])
@@ -399,9 +399,10 @@ def OriGeo(NodStr,EleStr):
         Nodes.append(rs.AddPoint(nod))
     return lines,Nodes
 
-def PlotFunc(PtList):
+def PlotFunc(PtList,deform):
     scale=rs.UnitScale(rs.UnitSystem(),4)
     PtList=PtList.replace("\n","").split("|")
+    endlines=[]
     plLine=[]
     plPts=[]
     for i,PtL in enumerate(PtList):
@@ -409,14 +410,26 @@ def PlotFunc(PtList):
         pt=PtL[0].split(",")
         plPts.append((float(pt[0])*scale,float(pt[1])*scale,0.0))
         if len(PtL)!=1:
-            plPts=rs.CullDuplicatePoints(plPts)
-            plLine.append(rs.AddPolyline(plPts))
+            if deform:
+                plLine.append(rs.AddPolyline(plPts))
+            else:
+                plLine.append(rs.AddPolyline(plPts[1:-1]))
+                if rs.Distance(plPts[0],plPts[1])!=0:
+                    endlines.append(rs.AddLine(plPts[0],plPts[1]))
+                if rs.Distance(plPts[-1],plPts[-2])!=0:
+                    endlines.append(rs.AddLine(plPts[-1],plPts[-2]))
             pt=PtL[1].split(",")
             plPts=[(float(pt[0])*scale,float(pt[1])*scale,0.0)]
         elif i==len(PtList)-1:
-            plPts=rs.CullDuplicatePoints(plPts)
-            plLine.append(rs.AddPolyline(plPts))
-    return plLine
+            if deform:
+                plLine.append(rs.AddPolyline(plPts))
+            else:
+                if rs.Distance(plPts[0],plPts[1])!=0:
+                    endlines.append(rs.AddLine(plPts[0],plPts[1]))
+                if rs.Distance(plPts[-1],plPts[-2])!=0:
+                    endlines.append(rs.AddLine(plPts[-1],plPts[-2]))
+                plLine.append(rs.AddPolyline(plPts[1:-1]))
+    return plLine,endlines
 
 def plusSign(plusStr):
     scale=rs.UnitScale(rs.UnitSystem(),4)
@@ -542,26 +555,26 @@ def readResults(resultfile,PyNodes,PyElements,PlotScalingForces):
         ReactionForces=[float(rf) for rf in resultstring[1].split(",")]
         
         Plus,PlusPos=plusSign(resultstring[7])
-        DeformationPlot=PlotFunc(resultstring[5])
+        DeformationPlot,_=PlotFunc(resultstring[5],True)
         Geometry,_=OriGeo(PyNodes,PyElements)
         
-        NormalPlot=PlotFunc(resultstring[6])
+        NormalPlot,NEnds=PlotFunc(resultstring[6],False)
         NForces,NLines=EvalForces(Geometry,NormalPlot,PlusPos,PlotScalingForces)
         NormalForces=raggedListToDataTree(NForces)
         NormalLines=raggedListToDataTree(NLines)
-        NormalPlot=Plus+NormalPlot
+        NormalPlot=Plus+NormalPlot+NEnds
         
-        ShearPlot=PlotFunc(resultstring[8])
+        ShearPlot,SEnds=PlotFunc(resultstring[8],False)
         SForces,SLines=EvalForces(Geometry,ShearPlot,PlusPos,PlotScalingForces)
         ShearForces=raggedListToDataTree(SForces)
         ShearLines=raggedListToDataTree(SLines)
-        ShearPlot=Plus+ShearPlot
+        ShearPlot=Plus+ShearPlot+SEnds
         
-        MomentPlot=PlotFunc(resultstring[10])
+        MomentPlot,MEnds=PlotFunc(resultstring[10],False)
         MForces,MLines=EvalForces(Geometry,MomentPlot,PlusPos,PlotScalingForces)
         MomentForces=raggedListToDataTree(MForces)
         MomentLines=raggedListToDataTree(MLines)
-        MomentPlot=Plus+MomentPlot
+        MomentPlot=Plus+MomentPlot+MEnds
         return Displacements, DeformationPlot, ReactionForces, NormalForces, NormalPlot,NormalLines, ShearForces, ShearPlot,ShearLines,MomentForces,MomentPlot,MomentLines
     else:
         return None
