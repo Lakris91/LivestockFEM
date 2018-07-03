@@ -617,11 +617,11 @@ def subdivideElement(ElementIndex,PyNodes,PyElements,PyDOFS,PyMaterial,Div):
                 stdof=PD[ei][:3]
                 endof=PD[ei][3:]
                 dfadd= max([item for sublist in PD for item in sublist])-(len(PN)*3-1)
-                if PyMaterial:
-                    [PM.append(PM[ei]) for _ in range(Div-1)]
-                    PyMaterials=str(PM)
                 
                 for j in range(Div):
+                    if PyMaterial:
+                        [PM.append(PM[ei]) for _ in range(Div-1)]
+                        PyMaterials=str(PM)
                     if j ==0:
                         en=len(PN)
                         PE[ei]=[sti,en]
