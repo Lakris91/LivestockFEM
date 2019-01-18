@@ -185,5 +185,5 @@ def update_output(list_of_contents):
 
 
 
-if __name__ == '__main__':
-    app.run_server(debug=True)
+#if __name__ == '__main__':
+#    app.run_server(debug=True)
