@@ -8,6 +8,7 @@ import plotly.graph_objs as go
 import numpy as np
 import math
 import json
+from os import urandom
 from io import StringIO
 from flask import Flask
 
@@ -17,10 +18,11 @@ from datetime import datetime, date
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 server = Flask(__name__)
-server.secret_key = "mfksdmfls"
-
+server.secret_key = urandom(16)
 app = dash.Dash(name = __name__, server = server, external_stylesheets=external_stylesheets)
 app.config.supress_callback_exceptions = True
+app.title = 'LivestockFEM'
+
 colors = {
     'text': '#0B4C5F'
 }
