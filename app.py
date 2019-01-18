@@ -15,7 +15,10 @@ from datetime import datetime, date
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+server = Flask(__name__)
+server.secret_key = "mfksdmfls"
+
+app = dash.Dash(name = __name__, server = server, external_stylesheets=external_stylesheets)
 app.config.supress_callback_exceptions = True
 colors = {
     'text': '#0B4C5F'
