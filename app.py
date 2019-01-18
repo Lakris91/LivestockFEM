@@ -9,7 +9,7 @@ import numpy as np
 import math
 import json
 from io import StringIO
-import Flask
+from flask import Flask
 
 from parseDict_old import plotDict
 from datetime import datetime, date
