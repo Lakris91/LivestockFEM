@@ -3,7 +3,6 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State, Event
 import base64
-#import pandas as pd
 import plotly.graph_objs as go
 import numpy as np
 import math
@@ -11,8 +10,7 @@ import json
 from os import urandom
 from io import StringIO
 from flask import Flask
-
-from parseDict_old import plotDict
+from parseDict import plotDict
 from datetime import datetime, date
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -20,6 +18,8 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 server = Flask(__name__)
 server.secret_key = urandom(16)
 app = dash.Dash(name = __name__, server = server, external_stylesheets=external_stylesheets)
+
+#app = dash.Dash(name = __name__, external_stylesheets=external_stylesheets)
 app.config.supress_callback_exceptions = True
 app.title = 'LivestockFEM'
 
