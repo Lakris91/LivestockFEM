@@ -6,11 +6,11 @@ import dash_core_components as dcc
 import dash_html_components as html
 
 def plotDict(jsonDict,Plots=["DOFPlot","ForcePlot1","ForcePlot2","ForcePlot3"]):
+    #
     fem=FEM_frame(jsonDict)
     units={"1":"meter",
             "1000":"millimeter"}
     unitfactor=jsonDict["UnitScaling"]
-
     scatterPlot=[]
     #Nodes Plot
     nodes=fem.X*fem.plotScale
@@ -58,17 +58,14 @@ def plotDict(jsonDict,Plots=["DOFPlot","ForcePlot1","ForcePlot2","ForcePlot3"]):
                 forcex=np.append(forcex,np.array(None))
                 forcey=np.append(forcey,np.array(None))
         scatterPlot.append(go.Scatter(x=forcex,y=forcey,name=plotNames[plot],mode='lines',visible=True))
-
-
-    minx=int(math.floor(minx*unitfactor)*unitfactor+unitfactor/2)
-    miny=int(math.floor(miny*unitfactor)*unitfactor-unitfactor/2)
-    maxx=int(math.ceil(maxx*unitfactor)*unitfactor)
-    maxy=int(math.ceil(maxy*unitfactor)*unitfactor)
+    minx=int(math.floor(minx/unitfactor)*unitfactor+unitfactor/2)
+    miny=int(math.floor(miny/unitfactor)*unitfactor-unitfactor/2)
+    maxx=int(math.ceil(maxx/unitfactor)*unitfactor)
+    maxy=int(math.ceil(maxy/unitfactor)*unitfactor)
     xrange=[minx,maxx]
     yrange=[miny,maxy]
 
     femPlot=html.Div([
-
     dcc.Graph(
         id='life-exp-vs-gdp',
         figure={
