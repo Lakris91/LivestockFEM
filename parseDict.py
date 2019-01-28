@@ -58,10 +58,10 @@ def plotDict(jsonDict,Plots=["DOFPlot","ForcePlot1","ForcePlot2","ForcePlot3"]):
                 forcex=np.append(forcex,np.array(None))
                 forcey=np.append(forcey,np.array(None))
         scatterPlot.append(go.Scatter(x=forcex,y=forcey,name=plotNames[plot],mode='lines',visible=True))
-    minx=int(math.floor(minx/unitfactor)*unitfactor+unitfactor/2)
+    minx=int(math.floor(minx/unitfactor)*unitfactor-unitfactor/2)
     miny=int(math.floor(miny/unitfactor)*unitfactor-unitfactor/2)
-    maxx=int(math.ceil(maxx/unitfactor)*unitfactor)
-    maxy=int(math.ceil(maxy/unitfactor)*unitfactor)
+    maxx=int(math.ceil(maxx/unitfactor)*unitfactor+unitfactor/2)
+    maxy=int(math.ceil(maxy/unitfactor)*unitfactor+unitfactor/2)
     xrange=[minx,maxx]
     yrange=[miny,maxy]
 
@@ -86,7 +86,7 @@ def plotDict(jsonDict,Plots=["DOFPlot","ForcePlot1","ForcePlot2","ForcePlot3"]):
                         'tickvals':list(range(yrange[0],yrange[1],max(1,int(unitfactor/2))))
                         },
                 margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
-                legend={'x': 0, 'y': 1},
+                legend={'x': 0, 'y': -.1,'orientation':"h"},
                 hovermode='closest'
             )
         }
