@@ -98,15 +98,15 @@ def update_output(list_of_contents):
 def update_output(n_clicks):
     return generateTabs()
 
-@app.callback(Output(component_id='upload-data', component_property='children'),
-              [Input(component_id='upload-data', component_property='contents')],
-              [State('upload-data', 'filename'),
-               State('upload-data', 'last_modified')])
-def update_output(list_of_contents,name,modif):
-    if list_of_contents is not None:
-        return html.Div([html.I("'"+name+"' "), " last modified: ", html.I(str(datetime.fromtimestamp(modif)).split(".")[0]) ," is loaded. " , html.A('Load another input file?')])
-    else:
-        return html.Div(['Drag and Drop or ', html.A('Select Input File')])
+#@app.callback(Output(component_id='upload-data', component_property='children'),
+#              [Input(component_id='upload-data', component_property='contents')],
+#              [State('upload-data', 'filename'),
+#               State('upload-data', 'last_modified')])
+#def update_output(list_of_contents,name,modif):
+#    if list_of_contents is not None:
+#        return html.Div([html.I("'"+name+"' "), " last modified: ", html.I(str(datetime.fromtimestamp(modif)).split(".")[0]) ," is loaded. " , html.A('Load another input file?')])
+#    else:
+#        return html.Div(['Drag and Drop or ', html.A('Select Input File')])
 
 
 
