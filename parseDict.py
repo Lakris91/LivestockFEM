@@ -6,48 +6,48 @@ import dash_core_components as dcc
 import dash_html_components as html
 import timeit
 
-def plotDict(outDict,Plots=["Nodes","Elements","DOFPlot","ForcePlot1","ForcePlot2","ForcePlot3"]):
-    plotNames={ "Nodes":"Nodes",
-                "Elements":"Elements",
-                "DOFPlot":"Deformation",
-                "ForcePlot1":"Normal Forces",
-                "ForcePlot2":"Shear Forces",
-                "ForcePlot3":"Bending Moments"
+def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot2','ForcePlot3']):
+    plotNames={ 'Nodes':'Nodes',
+                'Elements':'Elements',
+                'DOFPlot':'Deformation',
+                'ForcePlot1':'Normal Forces',
+                'ForcePlot2':'Shear Forces',
+                'ForcePlot3':'Bending Moments'
                 }
 
-    plotColors={"Nodes":"#191919",
-                "Elements":"#656664",
-                "DOFPlot":"#E0A914",
-                "ForcePlot1":"#0F84B5",
-                "ForcePlot2":"#64B227",
-                "ForcePlot3":"#E50428"
+    plotColors={'Nodes':'#191919',
+                'Elements':'#656664',
+                'DOFPlot':'#E0A914',
+                'ForcePlot1':'#0F84B5',
+                'ForcePlot2':'#64B227',
+                'ForcePlot3':'#E50428'
                 }
 
-    units={"1":"meter",
-            "1000":"millimeter"}
-    unitfactor=outDict["UnitScaling"]
+    units={'1':'meter',
+            '1000':'millimeter'}
+    unitfactor=outDict['UnitScaling']
     scatterPlot=[]
     start = timeit.default_timer()
     #Nodes Plot
-    nodes=np.array(outDict["Nodes"])*outDict["UnitScaling"]
+    nodes=np.array(outDict['Nodes'])*outDict['UnitScaling']
     minx=np.min(nodes,axis=0)[0]
     maxx=np.max(nodes,axis=0)[0]
     miny=np.min(nodes,axis=0)[1]
     maxy=np.max(nodes,axis=0)[1]
 
     num=np.arange(len(nodes))
-    if "Nodes" in Plots:
+    if 'Nodes' in Plots:
         scatterPlot.append(go.Scatter(x=nodes[:,0],y=nodes[:,1],name=plotNames['Nodes'],mode='markers+text',marker=dict(color=plotColors['Nodes']),text=num,textposition='top center' ))
     #Elements Plots
-    if "Elements" in Plots:
+    if 'Elements' in Plots:
         elenum=[]
         elex=np.array([])
         eley=np.array([])
-        for elei,ele in enumerate(outDict["Topology"]):
+        for elei,ele in enumerate(outDict['Topology']):
             elenum+=[None,elei,None]
             elex=np.append(elex,np.insert(ele,1,np.average(ele,axis=0),axis=0)[:,0])
             eley=np.append(eley,np.insert(ele,1,np.average(ele,axis=0),axis=0)[:,1])
-            if elei != len(outDict["Topology"]):
+            if elei != len(outDict['Topology']):
                 elenum.append(None)
                 elex=np.append(elex,None)
                 eley=np.append(eley,None)
@@ -55,7 +55,7 @@ def plotDict(outDict,Plots=["Nodes","Elements","DOFPlot","ForcePlot1","ForcePlot
                     text=np.array(elenum),textposition='top center'))
     #Deformation and forces plots
     for namei,plot in enumerate(Plots):
-        if plot == "Nodes" or plot == "Elements":
+        if plot == 'Nodes' or plot == 'Elements':
             continue
         plotlist = np.array(outDict[plot])
         forcex=np.array([])
@@ -94,7 +94,7 @@ def plotDict(outDict,Plots=["Nodes","Elements","DOFPlot","ForcePlot1","ForcePlot
                     xaxis={'title': units[str(int(unitfactor))],
                             'range' : xrange,
                             'zeroline':False,
-                            'scaleanchor' : "y",
+                            'scaleanchor' : 'y',
                             'tickvals':list(range(xrange[0],xrange[1],max(1,int(unitfactor/2))))
                             },
                     yaxis={'title': units[str(int(unitfactor))],
@@ -103,7 +103,7 @@ def plotDict(outDict,Plots=["Nodes","Elements","DOFPlot","ForcePlot1","ForcePlot
                             'tickvals':list(range(yrange[0],yrange[1],max(1,int(unitfactor/2))))
                             },
                     margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
-                    legend={'x': 0, 'y': -.1,'orientation':"h"},
+                    legend={'x': 0, 'y': -.1,'orientation':'h'},
                     hovermode='closest'
                 )
             }

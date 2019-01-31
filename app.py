@@ -35,7 +35,7 @@ jsonDict={}
 def generateTabs():
     tab_height='40px'
     tabDef=html.Div([
-    dcc.Tabs(id="tabs", value='scaling',style={'width':'50%', 'height':tab_height,'font-size': '16px','padding':1}, children=[
+    dcc.Tabs(id='tabs', value='scaling',style={'width':'50%', 'height':tab_height,'font-size': '16px','padding':1}, children=[
     dcc.Tab(label='Scaling', value='scaling',style={'padding': '6px'},selected_style={'padding': '6px'}),
     dcc.Tab(label='Topology', value='topology',style={'padding': '6px'},selected_style={'padding': '6px'}),
     dcc.Tab(label='Supports', value='support',style={'padding': '6px'},selected_style={'padding': '6px'}),
@@ -108,7 +108,7 @@ def update_output(n_clicks):
 #               State('upload-data', 'last_modified')])
 #def update_output(list_of_contents,name,modif):
 #    if list_of_contents is not None:
-#        return html.Div([html.I("'"+name+"' "), " last modified: ", html.I(str(datetime.fromtimestamp(modif)).split(".")[0]) ," is loaded. " , html.A('Load another input file?')])
+#        return html.Div([html.I('''+name+'' '), ' last modified: ', html.I(str(datetime.fromtimestamp(modif)).split('.')[0]) ,' is loaded. ' , html.A('Load another input file?')])
 #    else:
 #        return html.Div(['Drag and Drop or ', html.A('Select Input File')])
 
@@ -128,10 +128,10 @@ def update_output(n_clicks):
                                 options=[
                                     {'label': 'Nodes', 'value': 'Nodes'},
                                     {'label': 'Elements', 'value': 'Elements'},
-                                    {'label': 'Deformation', 'value': "DOFPlot"},
-                                    {'label': 'Normal Forces', 'value': "ForcePlot1"},
-                                    {'label': 'Shear Forces', 'value': "ForcePlot2"},
-                                    {'label': 'Bending Moments', 'value': "ForcePlot3"}],
+                                    {'label': 'Deformation', 'value': 'DOFPlot'},
+                                    {'label': 'Normal Forces', 'value': 'ForcePlot1'},
+                                    {'label': 'Shear Forces', 'value': 'ForcePlot2'},
+                                    {'label': 'Bending Moments', 'value': 'ForcePlot3'}],
                                 values=['Nodes','Elements','DOFPlot'],
                                 labelStyle={'display': 'inline-block'},
                             ))
