@@ -117,7 +117,7 @@ def update_output(n_clicks):
 @app.callback(Output(component_id='checkboxes', component_property='children'),
               [Input(component_id='loadData', component_property='n_clicks')])
 def update_output(n_clicks):
-    print("test")
+    global jsonDict
     viewCheck = html.Div(
                     [
                         html.Div(
@@ -165,12 +165,12 @@ def update_output(defVal,forVal,vfil):
     global jsonDict
     global resultDict
     print(1,defVal,forVal,vfil)
-    if jsonDict["PlotScalingDeformation"]==defVal and jsonDict["PlotScalingForces"]==forVal:
+    if jsonDict['PlotScalingDeformation']==defVal and jsonDict['PlotScalingForces']==forVal:
         print('Without calc:',timeit.default_timer()-start)
         return plotDict(resultDict,vfil)
     else:
-        jsonDict["PlotScalingDeformation"]=defVal
-        jsonDict["PlotScalingForces"]=forVal
+        jsonDict['PlotScalingDeformation']=defVal
+        jsonDict['PlotScalingForces']=forVal
         resultDict =  FEM_frame(jsonDict).outDict
         print('With calc:',timeit.default_timer()-start)
         return plotDict(resultDict,vfil)
