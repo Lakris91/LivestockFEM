@@ -4,45 +4,60 @@ import plotly.graph_objs as go
 import math
 import dash_core_components as dcc
 import dash_html_components as html
+import timeit
 
-def plotDict(jsonDict,Plots=["DOFPlot","ForcePlot1","ForcePlot2","ForcePlot3"]):
-    #
-    fem=FEM_frame(jsonDict)
-    units={"1":"meter",
-            "1000":"millimeter"}
-    unitfactor=jsonDict["UnitScaling"]
-    scatterPlot=[]
-    #Nodes Plot
-    nodes=fem.X*fem.plotScale
-    num=np.arange(len(nodes))
-    scatterPlot.append(go.Scatter(x=nodes[:,0],y=nodes[:,1],name='Nodes',mode='markers+text',text=num,textposition='top center' ))
-    #Elements Plots
-    elenum=[]
-    elex=np.array([])
-    eley=np.array([])
-    for elei,ele in enumerate(fem.outDict["Topology"]):
-        elenum+=[None,elei,None]
-        elex=np.append(elex,np.insert(ele,1,np.average(ele,axis=0),axis=0)[:,0])
-        eley=np.append(eley,np.insert(ele,1,np.average(ele,axis=0),axis=0)[:,1])
-        if elei != len(fem.outDict["Topology"]):
-            elenum.append(None)
-            elex=np.append(elex,None)
-            eley=np.append(eley,None)
-    scatterPlot.append(go.Scatter(x=elex,y=eley,name='Elements',mode='lines+text',
-                text=np.array(elenum),textposition='top center'))
-
-    plotNames={ "DOFPlot":"Deformation",
+def plotDict(outDict,Plots=["Nodes","Elements","DOFPlot","ForcePlot1","ForcePlot2","ForcePlot3"]):
+    plotNames={ "Nodes":"Nodes",
+                "Elements":"Elements",
+                "DOFPlot":"Deformation",
                 "ForcePlot1":"Normal Forces",
                 "ForcePlot2":"Shear Forces",
                 "ForcePlot3":"Bending Moments"
                 }
 
-    minx=float('inf')
-    maxx=-float('inf')
-    miny=float('inf')
-    maxy=-float('inf')
+    plotColors={"Nodes":"#191919",
+                "Elements":"#656664",
+                "DOFPlot":"#E0A914",
+                "ForcePlot1":"#0F84B5",
+                "ForcePlot2":"#64B227",
+                "ForcePlot3":"#E50428"
+                }
+
+    units={"1":"meter",
+            "1000":"millimeter"}
+    unitfactor=outDict["UnitScaling"]
+    scatterPlot=[]
+    start = timeit.default_timer()
+    #Nodes Plot
+    nodes=np.array(outDict["Nodes"])*outDict["UnitScaling"]
+    minx=np.min(nodes,axis=0)[0]
+    maxx=np.max(nodes,axis=0)[0]
+    miny=np.min(nodes,axis=0)[1]
+    maxy=np.max(nodes,axis=0)[1]
+
+    num=np.arange(len(nodes))
+    if "Nodes" in Plots:
+        scatterPlot.append(go.Scatter(x=nodes[:,0],y=nodes[:,1],name=plotNames['Nodes'],mode='markers+text',marker=dict(color=plotColors['Nodes']),text=num,textposition='top center' ))
+    #Elements Plots
+    if "Elements" in Plots:
+        elenum=[]
+        elex=np.array([])
+        eley=np.array([])
+        for elei,ele in enumerate(outDict["Topology"]):
+            elenum+=[None,elei,None]
+            elex=np.append(elex,np.insert(ele,1,np.average(ele,axis=0),axis=0)[:,0])
+            eley=np.append(eley,np.insert(ele,1,np.average(ele,axis=0),axis=0)[:,1])
+            if elei != len(outDict["Topology"]):
+                elenum.append(None)
+                elex=np.append(elex,None)
+                eley=np.append(eley,None)
+        scatterPlot.append(go.Scatter(x=elex,y=eley,name=plotNames['Elements'],marker=dict(color=plotColors['Elements']),mode='lines+text',
+                    text=np.array(elenum),textposition='top center'))
+    #Deformation and forces plots
     for namei,plot in enumerate(Plots):
-        plotlist = np.array(fem.outDict[plot])
+        if plot == "Nodes" or plot == "Elements":
+            continue
+        plotlist = np.array(outDict[plot])
         forcex=np.array([])
         forcey=np.array([])
         x0=plotlist[:,:,0]
@@ -57,40 +72,43 @@ def plotDict(jsonDict,Plots=["DOFPlot","ForcePlot1","ForcePlot2","ForcePlot3"]):
             if i!=len(x0)-1:
                 forcex=np.append(forcex,np.array(None))
                 forcey=np.append(forcey,np.array(None))
-        scatterPlot.append(go.Scatter(x=forcex,y=forcey,name=plotNames[plot],mode='lines',visible=True))
+        scatterPlot.append(go.Scatter(x=forcex,y=forcey,name=plotNames[plot],marker=dict(color=plotColors[plot]),mode='lines',visible=True))
     minx=int(math.floor(minx/unitfactor)*unitfactor-unitfactor/2)
     miny=int(math.floor(miny/unitfactor)*unitfactor-unitfactor/2)
     maxx=int(math.ceil(maxx/unitfactor)*unitfactor+unitfactor/2)
     maxy=int(math.ceil(maxy/unitfactor)*unitfactor+unitfactor/2)
     xrange=[minx,maxx]
     yrange=[miny,maxy]
-
+    stop = timeit.default_timer()
+    print('Scatter: ', stop - start)
+    start = timeit.default_timer()
     femPlot=html.Div([
-    dcc.Graph(
-        id='life-exp-vs-gdp',
-        figure={
-            'data': scatterPlot,
-            'layout': go.Layout(
-                autosize=True,
-                #width=800,
-                #height=800,
-                xaxis={'title': units[str(int(unitfactor))],
-                        'range' : xrange,
-                        'zeroline':False,
-                        'scaleanchor' : "y",
-                        'tickvals':list(range(xrange[0],xrange[1],max(1,int(unitfactor/2))))
-                        },
-                yaxis={'title': units[str(int(unitfactor))],
-                        'range' : yrange,
-                        'zeroline':False,
-                        'tickvals':list(range(yrange[0],yrange[1],max(1,int(unitfactor/2))))
-                        },
-                margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
-                legend={'x': 0, 'y': -.1,'orientation':"h"},
-                hovermode='closest'
-            )
-        }
-    )
+        dcc.Graph(
+            id='FEM-Plot',
+            figure={
+                'data': scatterPlot,
+                'layout': go.Layout(
+                    autosize=True,
+                    #width=800,
+                    #height=800,
+                    xaxis={'title': units[str(int(unitfactor))],
+                            'range' : xrange,
+                            'zeroline':False,
+                            'scaleanchor' : "y",
+                            'tickvals':list(range(xrange[0],xrange[1],max(1,int(unitfactor/2))))
+                            },
+                    yaxis={'title': units[str(int(unitfactor))],
+                            'range' : yrange,
+                            'zeroline':False,
+                            'tickvals':list(range(yrange[0],yrange[1],max(1,int(unitfactor/2))))
+                            },
+                    margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+                    legend={'x': 0, 'y': -.1,'orientation':"h"},
+                    hovermode='closest'
+                )
+            }
+        )
     ])
-
+    stop = timeit.default_timer()
+    print('Plot: ', stop - start)
     return femPlot

@@ -7,11 +7,14 @@ import plotly.graph_objs as go
 import numpy as np
 import math
 import json
+import timeit
 from os import urandom
 from io import StringIO
 from flask import Flask
 from parseDict import plotDict
 from datetime import datetime, date
+from livestockFEM_v2 import FEM_frame
+
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -72,7 +75,6 @@ app.layout = html.Div(children=[
 
     html.Div(id='checkboxes',style={'padding': 10}),
     html.Div(id='thePlot'),
-
     html.Div([
             #html.Hr(),
             html.Div(id='defTextDiv',children=[])
@@ -86,11 +88,13 @@ app.layout = html.Div(children=[
               [Input(component_id='upload-data', component_property='contents')])
 def update_output(list_of_contents):
     global jsonDict
+    global resultDict
     if list_of_contents is not None:
         content_type, content_string = list_of_contents.split(',')
         decoded = base64.b64decode(content_string)
         iostr = StringIO(decoded.decode('utf-8'))
         jsonDict=json.load(iostr)
+        resultDict =  FEM_frame(jsonDict).outDict
         return html.Button(id='loadData', children='Load Input Data')
 
 @app.callback(Output(component_id='defTextDiv', component_property='children'),
@@ -113,7 +117,7 @@ def update_output(n_clicks):
 @app.callback(Output(component_id='checkboxes', component_property='children'),
               [Input(component_id='loadData', component_property='n_clicks')])
 def update_output(n_clicks):
-    viewCheck=  html.Div(
+    viewCheck = html.Div(
                     [
                         html.Div(
                             [
@@ -121,17 +125,17 @@ def update_output(n_clicks):
                             html.Div(dcc.Checklist(
                                 id='viewfilter',
                                 options=[
-                                    #{'label': 'Nodes', 'value': },
-                                    #{'label': 'Elements', 'value': },
+                                    {'label': 'Nodes', 'value': 'Nodes'},
+                                    {'label': 'Elements', 'value': 'Elements'},
                                     {'label': 'Deformation', 'value': "DOFPlot"},
                                     {'label': 'Normal Forces', 'value': "ForcePlot1"},
                                     {'label': 'Shear Forces', 'value': "ForcePlot2"},
                                     {'label': 'Bending Moments', 'value': "ForcePlot3"}],
-                                values=['DOFPlot'],
+                                values=['Nodes','Elements','DOFPlot'],
                                 labelStyle={'display': 'inline-block'},
                             ))
                             ],
-                            className='three columns'
+                            className='four columns'
                         ),
                         html.Div(
                             [
@@ -154,14 +158,21 @@ def update_output(n_clicks):
 @app.callback(Output(component_id='thePlot', component_property='children'),
               [Input(component_id='defText', component_property='value'),
               Input(component_id='forText', component_property='value'),
-              Input(component_id='viewfilter', component_property='values')
-              ])
+              Input(component_id='viewfilter', component_property='values')])
 def update_output(defVal,forVal,vfil):
+    start = timeit.default_timer()
     global jsonDict
+    global resultDict
     print(1,defVal,forVal,vfil)
-    jsonDict["PlotScalingDeformation"]=defVal
-    jsonDict["PlotScalingForces"]=forVal
-    return plotDict(jsonDict,vfil)
+    if jsonDict["PlotScalingDeformation"]==defVal and jsonDict["PlotScalingForces"]==forVal:
+        print('Without calc:',timeit.default_timer()-start)
+        return plotDict(resultDict,vfil)
+    else:
+        jsonDict["PlotScalingDeformation"]=defVal
+        jsonDict["PlotScalingForces"]=forVal
+        resultDict =  FEM_frame(jsonDict).outDict
+        print('With calc:',timeit.default_timer()-start)
+        return plotDict(resultDict,vfil)
 
 @app.callback(Output('tabs-content', 'children'),
               [Input('tabs', 'value')])
@@ -179,5 +190,5 @@ def render_content(tab):
                 html.H3('Du er da lidt for nysgerrig')
                 ])
 
-#if __name__ == '__main__':
-#    app.run_server(debug=True)
+if __name__ == '__main__':
+    app.run_server(debug=True)
