@@ -48,6 +48,10 @@ def generateTabs():
 # Layout -----------------------------------------------------------------------
 
 app.layout = html.Div(children=[
+    # Hidden div inside the app that stores the intermediate value
+    html.Div(id='GloVar_json', style={'display': 'none'}),
+    html.Div(id='GloVar_resultDict', style={'display': 'none'}),
+
     html.Div([
     html.H1('LivestockFEM', style={'display': 'inline-block'}),
     html.H6('A simple FEM calculation tool.', style={'display': 'inline-block'})
@@ -76,7 +80,6 @@ app.layout = html.Div(children=[
     html.Div(id='checkboxes',style={'padding': 10}),
     html.Div(id='thePlot'),
     html.Div([
-            #html.Hr(),
             html.Div(id='defTextDiv',children=[])
             ])
 ])
@@ -84,97 +87,98 @@ app.layout = html.Div(children=[
 
 # Callbacks -----------------------------------------------------------------------
 
-@app.callback(Output(component_id='loadButton', component_property='children'),
+@app.callback(Output(component_id='GloVar_json', component_property='children'),
               [Input(component_id='upload-data', component_property='contents')])
 def update_output(list_of_contents):
-    global jsonDict
-    global resultDict
     if list_of_contents is not None:
         content_type, content_string = list_of_contents.split(',')
         decoded = base64.b64decode(content_string)
         iostr = StringIO(decoded.decode('utf-8'))
         jsonDict=json.load(iostr)
         resultDict = FEM_frame(jsonDict).outDict
-        print(jsonDict)
-        return html.Button(id='loadData', children='Load Input Data')
+        return str(jsonDict).replace("'",'"'),str(resultDict).replace("'",'"')
 
 @app.callback(Output(component_id='defTextDiv', component_property='children'),
-              [Input(component_id='loadData', component_property='n_clicks')])
-def update_output(n_clicks):
-    return generateTabs()
+              [Input(component_id='GloVar_json', component_property='children')])
+def update_output(jsonStr):
+    if jsonStr is not None:
+        return generateTabs()
 
-#@app.callback(Output(component_id='upload-data', component_property='children'),
-#              [Input(component_id='upload-data', component_property='contents')],
-#              [State('upload-data', 'filename'),
-#               State('upload-data', 'last_modified')])
-#def update_output(list_of_contents,name,modif):
-#    if list_of_contents is not None:
-#        return html.Div([html.I('''+name+'' '), ' last modified: ', html.I(str(datetime.fromtimestamp(modif)).split('.')[0]) ,' is loaded. ' , html.A('Load another input file?')])
-#    else:
-#        return html.Div(['Drag and Drop or ', html.A('Select Input File')])
+@app.callback(Output(component_id='upload-data', component_property='children'),
+             [Input(component_id='upload-data', component_property='contents')],
+             [State('upload-data', 'filename'),
+              State('upload-data', 'last_modified')])
+def update_output(list_of_contents,name,modif):
+   if list_of_contents is not None:
+       return html.Div([html.I("'"+name+"' "), ' last modified: ', html.I(str(datetime.fromtimestamp(modif)).split('.')[0]) ,' is loaded. ' , html.A('Load another input file?')])
+   else:
+       return html.Div(['Drag and Drop or ', html.A('Select Input File')])
 
 
 
 @app.callback(Output(component_id='checkboxes', component_property='children'),
-              [Input(component_id='loadData', component_property='n_clicks')])
-def update_output(n_clicks):
-    global jsonDict
-    viewCheck = html.Div(
-                    [
-                        html.Div(
-                            [
-                            html.Div('View filter:'),
-                            html.Div(dcc.Checklist(
-                                id='viewfilter',
-                                options=[
-                                    {'label': 'Nodes', 'value': 'Nodes'},
-                                    {'label': 'Elements', 'value': 'Elements'},
-                                    {'label': 'Deformation', 'value': 'DOFPlot'},
-                                    {'label': 'Normal Forces', 'value': 'ForcePlot1'},
-                                    {'label': 'Shear Forces', 'value': 'ForcePlot2'},
-                                    {'label': 'Bending Moments', 'value': 'ForcePlot3'}],
-                                values=['Nodes','Elements','DOFPlot'],
-                                labelStyle={'display': 'inline-block'},
-                            ))
-                            ],
-                            className='four columns'
-                        ),
-                        html.Div(
-                            [
-                            html.Div('Deformation Scale:'),
-                            dcc.Input(id='defText', type='number',value=jsonDict['PlotScalingDeformation'], selectionDirection='forward' )
-                            ],
-                            style={'display': 'inline-block'},
-                        ),
-                        html.Div(
-                            [
-                            html.Div('Forces Scale:'),
-                            dcc.Input(id='forText', type='number',value=jsonDict['PlotScalingForces'], selectionDirection='forward' )
-                            ],
-                            style={'display': 'inline-block'},
-                        )
-                    ],
-                )
-    return viewCheck
+              [Input(component_id='GloVar_json', component_property='children')])
+def update_output(jsonStr):
+    if jsonStr is not None:
+        jsonDict = json.loads(jsonStr[0])
+        viewCheck = html.Div(
+                        [
+                            html.Div(
+                                [
+                                html.Div('View filter:'),
+                                html.Div(dcc.Checklist(
+                                    id='viewfilter',
+                                    options=[
+                                        {'label': 'Nodes', 'value': 'Nodes'},
+                                        {'label': 'Elements', 'value': 'Elements'},
+                                        {'label': 'Deformation', 'value': 'DOFPlot'},
+                                        {'label': 'Normal Forces', 'value': 'ForcePlot1'},
+                                        {'label': 'Shear Forces', 'value': 'ForcePlot2'},
+                                        {'label': 'Bending Moments', 'value': 'ForcePlot3'}],
+                                    values=['Nodes','Elements','DOFPlot'],
+                                    labelStyle={'display': 'inline-block'},
+                                ))
+                                ],
+                                className='four columns'
+                            ),
+                            html.Div(
+                                [
+                                html.Div('Deformation Scale:'),
+                                dcc.Input(id='defText', type='number',value=jsonDict['PlotScalingDeformation'], selectionDirection='forward' )
+                                ],
+                                style={'display': 'inline-block'},
+                            ),
+                            html.Div(
+                                [
+                                html.Div('Forces Scale:'),
+                                dcc.Input(id='forText', type='number',value=jsonDict['PlotScalingForces'], selectionDirection='forward' )
+                                ],
+                                style={'display': 'inline-block'},
+                            )
+                        ],
+                    )
+        return viewCheck
 
 @app.callback(Output(component_id='thePlot', component_property='children'),
               [Input(component_id='defText', component_property='value'),
               Input(component_id='forText', component_property='value'),
-              Input(component_id='viewfilter', component_property='values')])
-def update_output(defVal,forVal,vfil):
+              Input(component_id='viewfilter', component_property='values')],
+              [State(component_id='GloVar_json', component_property='children')])
+def update_output(defVal,forVal,vfil, jsonStr):
     start = timeit.default_timer()
-    global jsonDict
-    global resultDict
-    print(1,defVal,forVal,vfil)
-    if jsonDict['PlotScalingDeformation']==defVal and jsonDict['PlotScalingForces']==forVal:
-        print('Without calc:',timeit.default_timer()-start)
-        return plotDict(resultDict,vfil)
-    else:
-        jsonDict['PlotScalingDeformation']=defVal
-        jsonDict['PlotScalingForces']=forVal
-        resultDict =  FEM_frame(jsonDict).outDict
-        print('With calc:',timeit.default_timer()-start)
-        return plotDict(resultDict,vfil)
+    if jsonStr is not None:
+        jsonDict = json.loads(jsonStr[0])
+        resultDict = json.loads(jsonStr[1])
+        print(1,defVal,forVal,vfil)
+        if jsonDict['PlotScalingDeformation']==defVal and jsonDict['PlotScalingForces']==forVal:
+            print('Without calc:',timeit.default_timer()-start)
+            return plotDict(resultDict,vfil)
+        else:
+            jsonDict['PlotScalingDeformation']=defVal
+            jsonDict['PlotScalingForces']=forVal
+            resultDict =  FEM_frame(jsonDict).outDict
+            print('With calc:',timeit.default_timer()-start)
+            return plotDict(resultDict,vfil)
 
 @app.callback(Output('tabs-content', 'children'),
               [Input('tabs', 'value')])

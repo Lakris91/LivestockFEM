@@ -39,6 +39,8 @@ class FEM_frame:
         self.outDict["NormalForce1"]=self.F1.tolist()
         self.outDict["ShearForce2"]=self.F2.tolist()
         self.outDict["Moment3"]=self.M.tolist()
+        self.outDict["UnitScaling"]=self.plotScale
+        self.outDict["Nodes"]=self.X.tolist()
 
         self.exportDispPlot()
         self.exportForcePlot(1)
