@@ -117,6 +117,7 @@ def update_output(n_clicks):
 @app.callback(Output(component_id='checkboxes', component_property='children'),
               [Input(component_id='loadData', component_property='n_clicks')])
 def update_output(n_clicks):
+    print("test")
     viewCheck = html.Div(
                     [
                         html.Div(
@@ -140,14 +141,14 @@ def update_output(n_clicks):
                         html.Div(
                             [
                             html.Div('Deformation Scale:'),
-                            dcc.Input(id='defText', type='number',value=jsonDict["PlotScalingDeformation"], selectionDirection='forward' )
+                            dcc.Input(id='defText', type='number',value=jsonDict['PlotScalingDeformation'], selectionDirection='forward' )
                             ],
                             style={'display': 'inline-block'},
                         ),
                         html.Div(
                             [
                             html.Div('Forces Scale:'),
-                            dcc.Input(id='forText', type='number',value=jsonDict["PlotScalingForces"], selectionDirection='forward' )
+                            dcc.Input(id='forText', type='number',value=jsonDict['PlotScalingForces'], selectionDirection='forward' )
                             ],
                             style={'display': 'inline-block'},
                         )
