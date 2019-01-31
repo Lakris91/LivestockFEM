@@ -94,7 +94,8 @@ def update_output(list_of_contents):
         decoded = base64.b64decode(content_string)
         iostr = StringIO(decoded.decode('utf-8'))
         jsonDict=json.load(iostr)
-        resultDict =  FEM_frame(jsonDict).outDict
+        resultDict = FEM_frame(jsonDict).outDict
+        print(jsonDict)
         return html.Button(id='loadData', children='Load Input Data')
 
 @app.callback(Output(component_id='defTextDiv', component_property='children'),
