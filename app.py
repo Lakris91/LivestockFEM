@@ -191,5 +191,5 @@ def render_content(tab):
                 html.H3('Du er da lidt for nysgerrig')
                 ])
 
-if __name__ == '__main__':
-    app.run_server(debug=True)
+#if __name__ == '__main__':
+#    app.run_server(debug=True)
