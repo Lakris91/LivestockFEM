@@ -15,8 +15,8 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
                 'ForcePlot3':'Bending Moments'
                 }
 
-    plotColors={'Nodes':'#191919',
-                'Elements':'#656664',
+    plotColors={'Nodes':'rgba(50,50,50,0.7)',
+                'Elements':'rgba(50,50,50,0.7)',
                 'DOFPlot':'#E0A914',
                 'ForcePlot1':'#0F84B5',
                 'ForcePlot2':'#64B227',
@@ -51,7 +51,7 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
                 elenum.append(None)
                 elex=np.append(elex,None)
                 eley=np.append(eley,None)
-        scatterPlot.append(go.Scatter(x=elex,y=eley,name=plotNames['Elements'],marker=dict(color=plotColors['Elements']),mode='lines+text',
+        scatterPlot.append(go.Scatter(x=elex,y=eley,name=plotNames['Elements'],line=dict(color=plotColors['Elements'],dash = 'dot'),mode='lines+text',
                     text=np.array(elenum),textposition='top center'))
     #Deformation and forces plots
     for namei,plot in enumerate(Plots):
@@ -62,17 +62,16 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
         forcey=np.array([])
         x0=plotlist[:,:,0]
         y0=plotlist[:,:,1]
+        minx=min(minx,np.min(x0))
+        maxx=max(maxx,np.max(x0))
+        miny=min(miny,np.min(y0))
+        maxy=max(maxy,np.max(y0))
+        #print(bool(namei))
         for i in range(len(x0)):
-            forcex=np.append(forcex,x0[i])
-            forcey=np.append(forcey,y0[i])
-            minx=min(minx,np.min(x0[i]))
-            maxx=max(maxx,np.max(x0[i]))
-            miny=min(miny,np.min(y0[i]))
-            maxy=max(maxy,np.max(y0[i]))
-            if i!=len(x0)-1:
-                forcex=np.append(forcex,np.array(None))
-                forcey=np.append(forcey,np.array(None))
-        scatterPlot.append(go.Scatter(x=forcex,y=forcey,name=plotNames[plot],marker=dict(color=plotColors[plot]),mode='lines',visible=True))
+            if plot =='DOFPlot':
+                scatterPlot.append(go.Scatter(x=x0[i],y=y0[i],name=plotNames[plot],line=dict(color=plotColors[plot],width = 2),mode='lines',showlegend=not(bool(i)),visible=True))
+                continue
+            scatterPlot.append(go.Scatter(x=x0[i],y=y0[i],name=plotNames[plot],line=dict(color=plotColors[plot],width = 1),mode='lines',fill="toself",text = ["Points only"+str(i) for i in range(len(x0[i]))], hoverinfo = 'text',hoveron='points',showlegend=not(bool(i)),visible=True))
     minx=int(math.floor(minx/unitfactor)*unitfactor-unitfactor/2)
     miny=int(math.floor(miny/unitfactor)*unitfactor-unitfactor/2)
     maxx=int(math.ceil(maxx/unitfactor)*unitfactor+unitfactor/2)
