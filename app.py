@@ -120,5 +120,5 @@ def render_content(tab):
         return tab5()
 
 
-if __name__ == '__main__':
-    app.run_server(debug=True)
+#if __name__ == '__main__':
+#    app.run_server(debug=True)
