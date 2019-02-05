@@ -198,7 +198,7 @@ class FEM_frame:
                 Yp=Yp.T[0]*self.plotScale
                 #Yp0=Yp0.T[0]*self.plotScale
                 print(Yp.T)
-                print("el",el,":",Yp0.T)
+                #print("el",el,":",Yp0.T)
             else:
                 Xp = array([x1,x1+F01[0],x2+F02[0],x2])*self.plotScale
                 Yp = array([y1,y1+F01[1],y2+F02[1],y2])*self.plotScale
