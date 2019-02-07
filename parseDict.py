@@ -6,7 +6,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import timeit
 
-def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot2','ForcePlot3']):
+def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot2','ForcePlot3'],plotHeight=500):
     plotNames={ 'Nodes':'Nodes',
                 'Elements':'Elements',
                 'DOFPlot':'Deformation',
@@ -22,7 +22,6 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
                 'ForcePlot2':'#64B227',
                 'ForcePlot3':'#E50428'
                 }
-
     units={'1':'meter',
             '1000':'millimeter'}
     unitfactor=outDict['UnitScaling']
@@ -66,12 +65,15 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
         maxx=max(maxx,np.max(x0))
         miny=min(miny,np.min(y0))
         maxy=max(maxy,np.max(y0))
-        #print(bool(namei))
         for i in range(len(x0)):
             if plot =='DOFPlot':
                 scatterPlot.append(go.Scatter(x=x0[i],y=y0[i],name=plotNames[plot],line=dict(color=plotColors[plot],width = 2),mode='lines',showlegend=not(bool(i)),visible=True))
-                continue
-            scatterPlot.append(go.Scatter(x=x0[i],y=y0[i],name=plotNames[plot],line=dict(color=plotColors[plot],width = 1),mode='lines',fill="toself",text = ["Points only"+str(i) for i in range(len(x0[i]))], hoverinfo = 'text',hoveron='points',showlegend=not(bool(i)),visible=True))
+            elif plot =='ForcePlot1':
+                scatterPlot.append(go.Scatter(x=x0[i],y=y0[i],text = [0]+outDict["NormalForce1"][i]+[0], hoverinfo = 'text',name=plotNames[plot],line=dict(color=plotColors[plot],width = 1),mode='lines',fill="toself",hoveron='points',showlegend=not(bool(i)),visible=True))
+            elif plot =='ForcePlot2':
+                scatterPlot.append(go.Scatter(x=x0[i],y=y0[i],text = [0]+outDict["ShearForce2"][i]+[0] , hoverinfo = 'text',name=plotNames[plot],line=dict(color=plotColors[plot],width = 1),mode='lines',fill="toself",hoveron='points',showlegend=not(bool(i)),visible=True))
+            elif plot =='ForcePlot3':
+                scatterPlot.append(go.Scatter(x=x0[i],y=y0[i],text = [0]+outDict["MomentForcesPt"][i]+[0], hoverinfo = 'text',name=plotNames[plot],line=dict(color=plotColors[plot],width = 1),mode='lines',fill="toself",hoveron='points',showlegend=not(bool(i)),visible=True))
     minx=int(math.floor(minx/unitfactor)*unitfactor-unitfactor/2)
     miny=int(math.floor(miny/unitfactor)*unitfactor-unitfactor/2)
     maxx=int(math.ceil(maxx/unitfactor)*unitfactor+unitfactor/2)
@@ -84,12 +86,24 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
     femPlot=html.Div([
         dcc.Graph(
             id='FEM-Plot',
+            style={
+                    'borderWidth': '1px',
+                    'borderStyle': 'solid',
+                    'borderRadius': '0px',
+                    'border-color': 'rgb(220, 220, 220)',
+                    'background-color': '#fafafa',
+                    'margin': '10px',
+                    'resize': 'vertical',
+                    'overflow': 'auto',
+                },
             figure={
                 'data': scatterPlot,
                 'layout': go.Layout(
-                    autosize=True,
-                    #width=800,
-                    #height=800,
+                    autosize=False,
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    width= (xrange[1]-xrange[0])/(yrange[1]-yrange[0])*plotHeight,
+                    height=plotHeight,
                     xaxis={'title': units[str(int(unitfactor))],
                             'range' : xrange,
                             'zeroline':False,
@@ -103,8 +117,8 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
                             },
                     margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
                     legend={'x': 0, 'y': -.1,'orientation':'h'},
-                    hovermode='closest'
-                )
+                    hovermode='closest',
+                ),
             }
         )
     ])

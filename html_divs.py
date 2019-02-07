@@ -4,10 +4,10 @@ import dash_html_components as html
 def dragndrop(idStr,text,linkText=''):
     dd = dcc.Upload(
             id=idStr,
-            children=html.Div([text, html.A(linkText)]),
+            children=html.Div(['\n','\n',text, html.A(linkText)]),
             accept='.json',
             style={
-                'width': '600px',
+                'width': '40%',
                 'height': '60px',
                 'lineHeight': '60px',
                 'borderWidth': '1px',
@@ -15,7 +15,12 @@ def dragndrop(idStr,text,linkText=''):
                 'borderRadius': '5px',
                 'textAlign': 'center',
                 'margin': '10px',
-                'display': 'inline-block'
+                'display': 'inline-block',
+                'overflow-y': 'auto',
+                'white-space':'nowrap'
+                #'overflow':'hidden'
+                #'resize': 'horizontal',
+                #'overflow': 'auto'
             },
         )
     return dd
@@ -39,8 +44,8 @@ def viewFilter(jsonDict):
         [
             html.Div(
                 [
-                html.Div('View filter:'),
-                html.Div(dcc.Checklist(
+                html.Div('View filter:',style={'display': 'inline-block','height':'30px'}),
+                dcc.Checklist(
                     id='viewfilter',
                     options=[
                         {'label': 'Nodes', 'value': 'Nodes'},
@@ -51,27 +56,38 @@ def viewFilter(jsonDict):
                         {'label': 'Bending Moments', 'value': 'ForcePlot3'}],
                     values=['Nodes','Elements','DOFPlot'],
                     labelStyle={'display': 'inline-block'},
-                ))
+                )
                 ],
-                className='four columns'
+                style={ 'width': '25%','display': 'inline-block','height':'75px','vertical-align': 'middle', 'padding':'10px'}
+                #className='three columns'
             ),
             html.Div(
                 [
-                html.Div('Deformation Scale:'),
-                dcc.Input(id='defText', type='number',value=jsonDict['PlotScalingDeformation'], selectionDirection='forward', debounce=True )
+                html.Div('Deformation Scale:',style={'borderStyle': 'line','height':'30px'}),
+                dcc.Input(id='defText', type='number',value=jsonDict['PlotScalingDeformation'], selectionDirection='forward', debounce=True , style={'height':'25px'})
                 ],
-                style={'display': 'inline-block'},
+                style={'display': 'inline-block','height':'75px','vertical-align': 'middle', 'padding':'10px'},
             ),
             html.Div(
                 [
-                html.Div('Forces Scale:'),
-                dcc.Input(id='forText', type='number',value=jsonDict['PlotScalingForces'], selectionDirection='forward',debounce=True )
+                html.Div('Forces Scale:',style={'borderStyle': 'line','height':'30px'}),
+                dcc.Input(id='forText', type='number',value=jsonDict['PlotScalingForces'], selectionDirection='forward',debounce=True, style={'height':'25px'} )
                 ],
-                style={'display': 'inline-block'},
+                style={'display': 'inline-block','height':'75px','vertical-align': 'middle', 'padding':'10px'},
+            ),
+            html.Div(
+                [
+                html.Div('Plot Height:',style={'display': 'inline-block','height':'30px'}),
+                html.Div(dcc.Slider(id='plotHeight', min=100, max=2000, value=500, step=50))
+                ],
+                style={'display': 'inline-block','width': '25%','height':'75px','vertical-align': 'middle', 'padding':'10px'},
             )
         ],
     )
     return viewCheck
+
+def plotHeight():
+    print("blah")
 
 def tab1():
     tabDiv= html.Div([

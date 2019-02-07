@@ -149,6 +149,7 @@ class FEM_frame:
         else: S=self.M
         self.outDict["PlusPos"]=[]
         self.outDict["ForcePlot"+str(s)]=[]
+        self.outDict["MomentForcesPt"]=[]
         for el in range(len(self.T)):
             self.outDict["ForcePlot"+str(s)].append([])
             # retningsvektor
@@ -158,7 +159,7 @@ class FEM_frame:
 
             # enhedsvektor
             n = n/L
-            #n=array([1,0])
+
             F01 = array([-n[1],n[0]])*S[el][0]*self.Sskala
             F02 = array([-n[1],n[0]])*S[el][1]*self.Sskala
             x1 = self.X[self.T[el][0]][0]
@@ -171,34 +172,34 @@ class FEM_frame:
 
             if s == 3:
                 p = self.dL[el][1]
-                m = -p*L**2/2
+                m = -1/2*p*L**2
                 Xp = np.zeros((self.nrp+4,1))
                 Yp = np.zeros((self.nrp+4,1))
-                #Yp0 = np.zeros((self.nrp+4,1))
+                Yp0 = np.zeros((self.nrp+2,1))
+                Yp0[0] = S[el][0]
+                Yp0[-1] = S[el][1]
                 Xp[0] = x1
                 Xp[1] = x1+F01[0]
                 Yp[0] = y1
                 Yp[1] = y1+F01[1]
-                #Yp0[0] = 0
-                #Yp0[1] = F01[1]
-                Xp[self.nrp+3] = x2
-                Xp[self.nrp+2] = x2+F02[0]
-                Yp[self.nrp+3] = y2
-                Yp[self.nrp+2] = y2+F02[1]
-                #Yp0[self.nrp+3] = 0
-                #Yp0[self.nrp+2] = F02[1]
+                Xp[-1] = x2
+                Xp[-2] = x2+F02[0]
+                Yp[-1] = y2
+                Yp[-2] = y2+F02[1]
+
+
                 for i in range(1,self.nrp+1):
                     x = i/(self.nrp+1)
                     mx = m*x*(1-x)
                     m1 = array([-n[1],n[0]])*mx*self.Sskala
                     Xp[i+1] = Xp[1]+i*(Xp[self.nrp+2]-Xp[1])/(self.nrp+1)+m1[0]
                     Yp[i+1] = Yp[1]+i*(Yp[self.nrp+2]-Yp[1])/(self.nrp+1)+m1[1]
-                    #Yp0[i+1] = Yp0[1]+i*(Yp0[self.nrp+2]-Yp0[1])/(self.nrp+1)
+                    Yp0[i] = Yp0[0]+i*(Yp0[-1]-Yp0[1])/(self.nrp-2)+mx
                 Xp=Xp.T[0]*self.plotScale
                 Yp=Yp.T[0]*self.plotScale
-                #Yp0=Yp0.T[0]*self.plotScale
-                print(Yp.T)
-                #print("el",el,":",Yp0.T)
+                Yp0=Yp0.T[0]
+                print(Yp0)
+                self.outDict["MomentForcesPt"].append(Yp0.tolist())
             else:
                 Xp = array([x1,x1+F01[0],x2+F02[0],x2])*self.plotScale
                 Yp = array([y1,y1+F01[1],y2+F02[1],y2])*self.plotScale

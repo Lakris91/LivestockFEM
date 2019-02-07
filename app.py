@@ -29,13 +29,15 @@ app.title = 'LivestockFEM'
 app.layout = html.Div(children=[
     # Hidden div inside the app that stores a variable instead of using Global that won't work on the server
     html.Div(id='GloVar_json', style={'display': 'none'}),
-
+    html.Div(id='test', style={'display': 'none'}),
     html.Div([
         html.H1('LivestockFEM', style={'display': 'inline-block'}),
         html.H6('A simple FEM calculation tool.', style={'display': 'inline-block'})
     ]),
 
-    html.Div(children=[dragndrop('upload-data', 'Drag and Drop or ', 'Select Input File')]),
+    html.Div(children=[
+    dragndrop('upload-data', 'Drag and Drop or ', 'Select Input File'),
+    ]),
 
     html.Div(id='checkboxes', style={'padding': 10}),
     html.Div(id='thePlot'),
@@ -86,23 +88,25 @@ def update_output(jsonStr):
 @app.callback(Output(component_id='thePlot', component_property='children'),
               [Input(component_id='defText', component_property='value'),
                Input(component_id='forText', component_property='value'),
-               Input(component_id='viewfilter', component_property='values')],
+               Input(component_id='viewfilter', component_property='values'),
+               Input(component_id='plotHeight', component_property='value')
+               ],
               [State(component_id='GloVar_json', component_property='children')])
-def update_output(defVal, forVal, vfil, jsonStr):
+def update_output(defVal, forVal, vfil,plotHeight, jsonStr):
     start = timeit.default_timer()
     if jsonStr is not None:
         jsonDict = json.loads(jsonStr[0])
         resultDict = json.loads(jsonStr[1])
-        #print(1, defVal, forVal, vfil)
+        print(1, defVal, forVal, vfil)
         if jsonDict['PlotScalingDeformation'] == defVal and jsonDict['PlotScalingForces'] == forVal:
-            #print('Without calc:', timeit.default_timer()-start)
-            return plotDict(resultDict, vfil)
+            print('Without calc:', timeit.default_timer()-start)
+            return plotDict(resultDict, vfil,plotHeight)
         else:
             jsonDict['PlotScalingDeformation'] = defVal
             jsonDict['PlotScalingForces'] = forVal
             resultDict = FEM_frame(jsonDict).outDict
-            #print('With calc:', timeit.default_timer()-start)
-            return plotDict(resultDict, vfil)
+            print('With calc:', timeit.default_timer()-start)
+            return plotDict(resultDict, vfil,plotHeight)
 
 # Generates the contents of the tabs
 @app.callback(Output('tabs-content', 'children'),
@@ -119,6 +123,11 @@ def render_content(tab):
     else:
         return tab5()
 
+@app.callback(Output('test','children'),[Input('FEM-Plot','figure')])
+def test(styledict):
+    print("blah")#styledict['layout']['height'])
 
-#if __name__ == '__main__':
-#    app.run_server(debug=True)
+
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
