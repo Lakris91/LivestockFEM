@@ -2,25 +2,30 @@ import json
 import numpy as np
 from livestockFEM_local import *
 array=np.array
+import sys
+import os
+import math
 
 np.set_printoptions(precision=5)
 np.set_printoptions(linewidth=200)
 
 class FEM_frame:
 
-    def __init__(self,inDict):
-        #with open(input_file, 'r') as file:
-        #    inDict=json.loads(file.read())
+    def __init__(self,inDict,respath=r"result_file.json"):
+        self.outDict={}
+        self.outDict["ElementStiffnessSmall"]=[]
+        self.outDict["ElementStiffnessExpanded"]=[]
+
         self.X = array(inDict["PyNodes"])
         self.T = array(inDict["PyElements"])
         self.D = array(inDict["PyDOFS"])
-        self.G = array(inDict["PyMaterial"])
+        self.G = array([mat[:3] for mat in inDict["PyMaterial"]])
         self.U = array(inDict["PySupport"])
         self.bL = array(inDict["PyNodeLoad"])
         self.dL = array(inDict["PyElementLoad"])
         self.plotScale = inDict["UnitScaling"]
         self.Vskala = inDict["PlotScalingDeformation"]
-        self.Sskala = inDict["PlotScalingForces"]/self.plotScale
+        self.Sskala = inDict["PlotScalingForces"]/1000
         self.nrp = inDict["PlotDivisions"]
 
         self.K = self.sysStiff()
@@ -29,7 +34,6 @@ class FEM_frame:
         self.V,self.Ru = self.calcDispReac()
         self.F1,self.F2,self.M = self.calcForces()
 
-        self.outDict={}
         topo=[]
         for ele in self.T:
             topo.append((self.X[ele]*self.plotScale).tolist())
@@ -41,12 +45,13 @@ class FEM_frame:
         self.outDict["Moment3"]=self.M.tolist()
         self.outDict["UnitScaling"]=self.plotScale
         self.outDict["Nodes"]=self.X.tolist()
+        self.outDict["PlotDivisions"]=self.nrp
 
         self.exportDispPlot()
         self.exportForcePlot(1)
         self.exportForcePlot(2)
         self.exportForcePlot(3)
-        self.createJSON("result_file.json")
+        self.createJSON(respath)
 
     def sysStiff(self):
         K = np.zeros((np.max(self.D)+1,np.max(self.D)+1))
@@ -56,10 +61,23 @@ class FEM_frame:
             X2 = self.X[self.T[el][1]]
             #Define element stiffness matrix
             k=eleStiff(X1,X2,self.G[el])
+            kk=k
             de=self.D[el]
+            kk = np.vstack([de, kk])
+            kk = np.hstack([np.concatenate(([-1],de))[np.newaxis].T, kk])
+            self.outDict["ElementStiffnessSmall"].append(np.around(kk,0).tolist())
+            Kk = np.zeros((np.max(self.D)+1,np.max(self.D)+1))
             for i,dei in enumerate(de):
                 for j,dej in enumerate(de):
                     K[dei,dej]+=k[i,j]
+                    Kk[dei,dej]+=k[i,j]
+            Kk = np.vstack([np.arange(np.ma.size(Kk,1)), Kk])
+            Kk = np.hstack([(np.arange(np.ma.size(Kk,0))-1)[np.newaxis].T, Kk])
+            self.outDict["ElementStiffnessExpanded"].append(np.around(Kk,0).tolist())
+        KK = K
+        KK = np.vstack([np.arange(np.ma.size(KK,1)), KK])
+        KK = np.hstack([(np.arange(np.ma.size(KK,0))-1)[np.newaxis].T, KK])
+        self.outDict["SystemStiffness"]=np.around(KK,0).tolist()
         return K
 
     def loadVec(self):
@@ -82,10 +100,10 @@ class FEM_frame:
                 de=self.D[el]
                 for i,dei in enumerate(de):
                     R[dei]+=r[i]
-
         for bLs in self.bL:
             d=int(bLs[0])
             R[d]+=bLs[1]
+
         return R
 
     def calcDispReac(self):
@@ -102,6 +120,8 @@ class FEM_frame:
         Ru = Kfu.T @ Vf + Kuu @ Vu
         V[df]=Vf
         V[du]=Vu
+        V = np.around(V,6)
+        Ru = np.around(Ru,0)
         return V,Ru
 
     def calcForces(self):
@@ -119,12 +139,20 @@ class FEM_frame:
             F1[el]=f10.T + f11.T
             F2[el]=f20.T + f21.T
             M[el]=m0.T + m1.T
+        F1 = np.around(F1,0)
+        F2 = np.around(F2,0)
+        M = np.around(M,0)
         return F1,F2,M
 
     def exportDispPlot(self):
+        rou=int(6-math.log10(self.plotScale))
+        #print(rou)
+        div=self.nrp+2
         self.outDict["DOFPlot"]=[]
+        self.outDict["DefDist"]=[]
         for el in range(len(self.T)):
             self.outDict["DOFPlot"].append([])
+            self.outDict["DefDist"].append([])
             X1 = self.X[self.T[el][0]]
             X2 = self.X[self.T[el][1]]
             A,L = transMat(X1,X2)
@@ -133,20 +161,25 @@ class FEM_frame:
             #hent lokale flytninger
             v=self.V[self.D[el]]
             #koordinater plus flytninger
-            Xs=np.zeros((2,self.nrp))
-            for i in range(1,self.nrp+1):
-                s=(i-1)/(self.nrp-1)
+            Xs=np.zeros((2,div))
+            for i in range(1,div+1):
+                s=(i-1)/(div-1)
                 N=array([   [1-s,   0,                  0,                    s,    0,               0             ],
                             [0,     1-3*s**2+2*s**3,    (s-2*s**2+s**3)*L,    0,    3*s**2-2*s**3,    (-s**2+s**3)*L]])
                 Xs=(self.X[self.T[el][0]]).T*(1-s)+(self.X[self.T[el][1]]).T*s+((self.Vskala*Au.T) @ N @ A @ v).T
-
+                Xs0=(self.X[self.T[el][0]]).T*(1-s)+(self.X[self.T[el][1]]).T*s+((Au.T) @ N @ A @ v).T
+                Xe=[(X2[0]-X1[0])*((i-1)/(div-1))+X1[0],(X2[1]-X1[1])*((i-1)/(div-1))+X1[1]]
+                disVec=(np.array(Xe)-Xs0)*self.plotScale
                 Xs*=self.plotScale
-                self.outDict["DOFPlot"][el].append(Xs[0].tolist()+[0.0])
+                self.outDict["DOFPlot"][el].append(np.around(Xs[0],rou).tolist()+[0.0])
+                self.outDict["DefDist"][el].append(np.around(disVec[0],rou).tolist()+[round(np.linalg.norm(disVec),rou)])
+            self.outDict["DefDist"][el]=(array(self.outDict["DefDist"][el]).T).tolist()
 
     def exportForcePlot(self,s):
         if s==1: S=self.F1
         elif s==2: S=self.F2
         else: S=self.M
+        rou=int(6-math.log10(self.plotScale))
         self.outDict["PlusPos"]=[]
         self.outDict["ForcePlot"+str(s)]=[]
         self.outDict["MomentForcesPt"]=[]
@@ -156,7 +189,6 @@ class FEM_frame:
             n = self.X[self.T[el][1]]-self.X[self.T[el][0]]
             # elementlængde
             L = sqrt(n @ n)
-
             # enhedsvektor
             n = n/L
 
@@ -186,26 +218,23 @@ class FEM_frame:
                 Xp[-2] = x2+F02[0]
                 Yp[-1] = y2
                 Yp[-2] = y2+F02[1]
-
-
                 for i in range(1,self.nrp+1):
                     x = i/(self.nrp+1)
                     mx = m*x*(1-x)
                     m1 = array([-n[1],n[0]])*mx*self.Sskala
                     Xp[i+1] = Xp[1]+i*(Xp[self.nrp+2]-Xp[1])/(self.nrp+1)+m1[0]
                     Yp[i+1] = Yp[1]+i*(Yp[self.nrp+2]-Yp[1])/(self.nrp+1)+m1[1]
-                    Yp0[i] = Yp0[0]+i*(Yp0[-1]-Yp0[1])/(self.nrp-2)+mx
+                    Yp0[i] = Yp0[0]+i*(Yp0[-1]-Yp0[0])/(self.nrp+1)+mx
                 Xp=Xp.T[0]*self.plotScale
                 Yp=Yp.T[0]*self.plotScale
                 Yp0=Yp0.T[0]
-                print(Yp0)
-                self.outDict["MomentForcesPt"].append(Yp0.tolist())
+                self.outDict["MomentForcesPt"].append(np.around(Yp0,0).tolist())
             else:
                 Xp = array([x1,x1+F01[0],x2+F02[0],x2])*self.plotScale
                 Yp = array([y1,y1+F01[1],y2+F02[1],y2])*self.plotScale
 
             for i in range(len(Xp)):
-                self.outDict["ForcePlot"+str(s)][el].append([Xp[i],Yp[i],0.0])
+                self.outDict["ForcePlot"+str(s)][el].append([round(Xp[i],rou),round(Yp[i],rou),0.0])
 
     def createJSON(self,output_file):
         dictstr=str(self.outDict).replace("'",'"').replace(', "',',\n "').replace("{","{\n ").replace("}","\n}")
@@ -213,4 +242,10 @@ class FEM_frame:
             file.write(dictstr)
 
 if __name__ == "__main__":
-    FEM=FEM_frame('C:/livestock3d/data/livestockFEM/input_file.json')
+    with open(sys.argv[1]) as jsonfile:
+        jsonDict = json.load(jsonfile)
+    if "input_file.json" in os.path.split(sys.argv[1])[1]:
+        resPath = sys.argv[1].replace("input_file.json","result_file.json")
+    else:
+        resPath = sys.argv[1].replace(".json","result_file.json")
+    FEM=FEM_frame(jsonDict,resPath)

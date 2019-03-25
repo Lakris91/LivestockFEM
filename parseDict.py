@@ -6,7 +6,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import timeit
 
-def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot2','ForcePlot3'],plotHeight=500):
+def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot2','ForcePlot3'],plotHeight=350):
     plotNames={ 'Nodes':'Nodes',
                 'Elements':'Elements',
                 'DOFPlot':'Deformation',
@@ -26,6 +26,7 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
             '1000':'millimeter'}
     unitfactor=outDict['UnitScaling']
     scatterPlot=[]
+    elementNo=[]
     start = timeit.default_timer()
     #Nodes Plot
     nodes=np.array(outDict['Nodes'])*outDict['UnitScaling']
@@ -52,6 +53,8 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
                 eley=np.append(eley,None)
         scatterPlot.append(go.Scatter(x=elex,y=eley,name=plotNames['Elements'],line=dict(color=plotColors['Elements'],dash = 'dot'),mode='lines+text',
                     text=np.array(elenum),textposition='top center'))
+        scatterPlot[-1]['customdata']=elenum
+        #elementNo.append(elei)
     #Deformation and forces plots
     for namei,plot in enumerate(Plots):
         if plot == 'Nodes' or plot == 'Elements':
@@ -67,13 +70,18 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
         maxy=max(maxy,np.max(y0))
         for i in range(len(x0)):
             if plot =='DOFPlot':
-                scatterPlot.append(go.Scatter(x=x0[i],y=y0[i],name=plotNames[plot],line=dict(color=plotColors[plot],width = 2),mode='lines',showlegend=not(bool(i)),visible=True))
+                elementNo.append([i]*len(x0[i]))
+                scatterPlot.append(go.Scatter(x=x0[i],y=y0[i],text = outDict["DefDist"][i][2], hoverinfo = 'text',name=plotNames[plot],line=dict(color=plotColors[plot],width = 2),mode='lines',showlegend=not(bool(i)),visible=True))
+                scatterPlot[-1]['customdata']=[i]*len(x0[i])
             elif plot =='ForcePlot1':
                 scatterPlot.append(go.Scatter(x=x0[i],y=y0[i],text = [0]+outDict["NormalForce1"][i]+[0], hoverinfo = 'text',name=plotNames[plot],line=dict(color=plotColors[plot],width = 1),mode='lines',fill="toself",hoveron='points',showlegend=not(bool(i)),visible=True))
+                scatterPlot[-1]['customdata']=[i]*len(x0[i])
             elif plot =='ForcePlot2':
                 scatterPlot.append(go.Scatter(x=x0[i],y=y0[i],text = [0]+outDict["ShearForce2"][i]+[0] , hoverinfo = 'text',name=plotNames[plot],line=dict(color=plotColors[plot],width = 1),mode='lines',fill="toself",hoveron='points',showlegend=not(bool(i)),visible=True))
+                scatterPlot[-1]['customdata']=[i]*len(x0[i])
             elif plot =='ForcePlot3':
                 scatterPlot.append(go.Scatter(x=x0[i],y=y0[i],text = [0]+outDict["MomentForcesPt"][i]+[0], hoverinfo = 'text',name=plotNames[plot],line=dict(color=plotColors[plot],width = 1),mode='lines',fill="toself",hoveron='points',showlegend=not(bool(i)),visible=True))
+                scatterPlot[-1]['customdata']=[i]*len(x0[i])
     minx=int(math.floor(minx/unitfactor)*unitfactor-unitfactor/2)
     miny=int(math.floor(miny/unitfactor)*unitfactor-unitfactor/2)
     maxx=int(math.ceil(maxx/unitfactor)*unitfactor+unitfactor/2)
@@ -99,24 +107,35 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
             figure={
                 'data': scatterPlot,
                 'layout': go.Layout(
-                    autosize=False,
+                    autosize=True,
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    width= (xrange[1]-xrange[0])/(yrange[1]-yrange[0])*plotHeight,
+                    #width= (xrange[1]-xrange[0])/(yrange[1]-yrange[0])*plotHeight*1.5,
                     height=plotHeight,
                     xaxis={'title': units[str(int(unitfactor))],
                             'range' : xrange,
                             'zeroline':False,
                             'scaleanchor' : 'y',
-                            'tickvals':list(range(xrange[0],xrange[1],max(1,int(unitfactor/2))))
+                            'tickvals':list(range(xrange[0],xrange[1],max(1,int(unitfactor/2)))),
+                            'tickangle':45
                             },
                     yaxis={'title': units[str(int(unitfactor))],
                             'range' : yrange,
                             'zeroline':False,
-                            'tickvals':list(range(yrange[0],yrange[1],max(1,int(unitfactor/2))))
+                            'tickvals':list(range(yrange[0],yrange[1],max(1,int(unitfactor/2)))),
+                            'position':0.015
+                            },
+                    yaxis2={'title': units[str(int(unitfactor))],
+                            'range' : yrange,
+                            'zeroline':False,
+                            'tickvals':list(range(yrange[0],yrange[1],max(1,int(unitfactor/2)))),
+                            'anchor':'free',
+                            'overlaying':'y',
+                            'side':'left',
+                            #'tickvals':list(range(yrange[0],yrange[1],max(1,int(unitfactor/2)))),
                             },
                     margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
-                    legend={'x': 0, 'y': -.1,'orientation':'h'},
+                    legend={'x': 0, 'y': -0.1,'orientation':'h'},
                     hovermode='closest',
                 ),
             }

@@ -8,6 +8,7 @@ import numpy as np
 import math
 import json
 import timeit
+import sys
 from os import urandom
 from io import StringIO
 from flask import Flask
@@ -24,6 +25,43 @@ app = dash.Dash(name=__name__, server=server, external_stylesheets=external_styl
 app.config.supress_callback_exceptions = True
 app.title = 'LivestockFEM'
 
+
+np.set_printoptions(threshold=sys.maxsize,linewidth=sys.maxsize)
+
+# Help Functions ---------------------------------------------------------------
+
+def matrixToHtml(matlist,hoverData,dofs,element=True,system=True):
+    htmlList=[]
+
+    try:
+        if element:
+            matlist = matlist[hoverData["points"][0]["customdata"]]
+
+        matStr=str(np.round(np.array(matlist)).astype(int)).replace("[["," ").replace("[","").replace("]]","").replace(" -1 ","DOF ")
+        matStr=matStr.replace("\n","").replace("]","\n")
+        cellLen=int(len(matStr.replace("\n",""))/(len(matlist)**2))
+        dofColor=[['#a2bbd6','#a2d6aa'],['#d6d3a2','#d6a2a2']]
+        for i, row in enumerate(matStr.split("\n")):
+            for j,pos in enumerate(range(0,len(row),cellLen)):
+                cell=row[pos:pos+cellLen]
+                if pos == 0 and i == 0:
+                    htmlList.append(html.U(html.B(cell[1:]+"|")))
+                elif pos == 0:
+                    htmlList.append(html.B(cell[1:]+"|"))
+                elif i == 0:
+                    htmlList.append(html.U(html.B(cell)))
+                elif (float(i-1) in dofs and float(j-1) in dofs) and system:
+                    dColor=dofColor[int(dofs.index(float(i-1))/3)][int(dofs.index(float(j-1))/3)]
+                    htmlList.append(html.B(cell,style={'background-color': dColor}))
+                elif element and not system:
+                    htmlList.append(html.B(cell,style={'background-color': dofColor[int((i-1)/3)][int((j-1)/3)]}))
+                else:
+                    htmlList.append(cell)
+            htmlList.append("\n")
+    except:
+        matStr=""
+    return htmlList
+
 # Layout -----------------------------------------------------------------------
 
 app.layout = html.Div(children=[
@@ -31,20 +69,21 @@ app.layout = html.Div(children=[
     html.Div(id='GloVar_json', style={'display': 'none'}),
     html.Div(id='test', style={'display': 'none'}),
     html.Div([
-        html.H1('LivestockFEM', style={'display': 'inline-block'}),
-        html.H6('A simple FEM calculation tool.', style={'display': 'inline-block'})
-    ]),
+        html.H1('LivestockFEM', style={'display': 'inline-block', 'margin-bottom':'0px','vertical-align': 'middle','padding-bottom':'0px'}),
+        html.H6('A simple FEM calculation tool.', style={'display': 'inline-block', 'margin-bottom':'0px', 'margin-left':'8px','vertical-align': 'middle','padding':'0px'}),
+        html.Div(children=[
+        dragndrop('upload-data', 'Drag and Drop or ', 'Select Input File'),
+        ],style={'display': 'inline-block', 'margin-bottom':'0px', 'margin-left':'8px','vertical-align': 'middle','padding-bottom':'0px'})
+    ],style={'margin':'0px','padding':'0px'}),
 
-    html.Div(children=[
-    dragndrop('upload-data', 'Drag and Drop or ', 'Select Input File'),
-    ]),
 
-    html.Div(id='checkboxes', style={'padding': 10}),
+
+    html.Div(id='checkboxes', style={'padding': 5,'margin-bottom':'0px','margin-top':'0px'}),
     html.Div(id='thePlot'),
     html.Div([html.Div(id='tabDiv', children=[])])
 ])
 
-# Callbacks -----------------------------------------------------------------------
+# Callbacks --------------------------------------------------------------------
 
 # Upload file parse data to json and store in hidden Div variable
 @app.callback(Output(component_id='GloVar_json', component_property='children'),
@@ -120,14 +159,71 @@ def render_content(tab):
         return tab3()
     elif tab == 'loads':
         return tab4()
-    else:
+    elif tab == 'matrix':
         return tab5()
+    else:
+        return tab6()
 
-@app.callback(Output('test','children'),[Input('FEM-Plot','figure')])
-def test(styledict):
-    print("blah")#styledict['layout']['height'])
+@app.callback(Output('hover-data', 'children'),
+    [Input('FEM-Plot', 'hoverData')],
+    [State('GloVar_json', 'children')])
+def display_hover_data(hoverData,jsonStr):
+    resJson=json.loads(jsonStr[1])
+    try:
+        elementNo=hoverData["points"][0]["customdata"]
+        dofs=resJson["ElementStiffnessSmall"][elementNo][0][1:]
+        matrix2=["Current Element: "+ str(elementNo) + "\n"]
+        matrix2.extend("Element Degrees of Freedom: " + " ".join([str(int(dof)) for dof in dofs]) + "\n")
+        matrix2.extend("\nElement Stiffness Matrix, each row and column represents its Degree of Freedom (DOF):\n")
+        matrix2.extend(matrixToHtml(resJson["ElementStiffnessSmall"],hoverData,dofs,True,False))
+        matrix2.extend(["\nElement Stiffness Matrix Expanded, the Element Stiffness Matrix is expanded to the size of the System Stiffness Matrix based on the degree of freedom:\n"])
+        matrix2.extend(matrixToHtml(resJson["ElementStiffnessExpanded"],hoverData,dofs,True,True))
+        matrix2.extend(["\nSystem Stiffness Matrix, adding the expanded Element Stiffness Matrixes together forms the System Stiffness Matrix:\n"])
+        matrix2.extend(matrixToHtml(resJson["SystemStiffness"],hoverData,dofs,False,True))
+    except:
+        matrix2 = ""
+    return matrix2
+
+@app.callback(Output('results-div', 'children'),
+    [Input('result-dropdown', 'value'),
+    Input('GloVar_json', 'children')])
+def update_output2(value,jsonStr):
+    resJson=json.loads(jsonStr[1])
 
 
+    if value=='overview':
+        maxDisp=np.max(np.array(resJson["DefDist"]))
+        maxMoment=np.max(np.absolute(np.array(resJson["MomentForcesPt"])))
+        maxNormal=np.max(np.absolute(np.array(resJson["NormalForce1"])))
+        maxShear=np.max(np.absolute(np.array(resJson["ShearForce2"])))
+        resDiv = html.Div([
+            html.H3('Results overview:'),
+            html.Table([
+                html.Tr([
+                    html.Td("Max Displacement:"),
+                    html.Td(str(int(maxDisp)),style={'textAlign':'right'}),
+                    html.Td("mm")
+                ],style={'padding': '0px'}),
+                html.Tr([
+                    html.Td("Max Absolute Bending Moment:"),
+                    html.Td(str(int(maxMoment)),style={'textAlign':'right'}),
+                    html.Td("Nm")
+                ],style={'padding': '0px'}),
+                html.Tr([
+                    html.Td("Max Absolute Normal Forces:"),
+                    html.Td(str(int(maxNormal)),style={'textAlign':'right'}),
+                    html.Td("N/m2")
+                ],style={'padding': '0px'}),
+                html.Tr([
+                    html.Td("Max Absolute Shear Forces:"),
+                    html.Td(str(int(maxShear)),style={'textAlign':'right'}),
+                    html.Td("N/m2")
+                ],style={'padding': '0px'})
+            ])
+        ])
+    else:
+        resDiv="Please wait for this to implemented"
+    return resDiv
 
 if __name__ == '__main__':
     app.run_server(debug=True)
