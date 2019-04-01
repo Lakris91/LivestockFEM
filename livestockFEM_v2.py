@@ -1,6 +1,7 @@
 import json
 import numpy as np
 from livestockFEM_local import *
+from livestockFEM_viz import *
 array=np.array
 import sys
 import os
@@ -14,6 +15,7 @@ class FEM_frame:
     def __init__(self,inDict,respath=r"result_file.json"):
         self.outDict={}
         self.outDict["ElementStiffnessSmall"]=[]
+        self.outDict["ElementStiffnessSmallLocal"]=[]
         self.outDict["ElementStiffnessExpanded"]=[]
 
         self.X = array(inDict["PyNodes"])
@@ -22,7 +24,7 @@ class FEM_frame:
         self.G = array([mat[:3] for mat in inDict["PyMaterial"]])
         self.U = array(inDict["PySupport"])
         self.bL = array(inDict["PyNodeLoad"])
-        self.dL = array(inDict["PyElementLoad"])
+        self.dL = np.round(array(inDict["PyElementLoad"]),0)
         self.plotScale = inDict["UnitScaling"]
         self.Vskala = inDict["PlotScalingDeformation"]
         self.Sskala = inDict["PlotScalingForces"]/1000
@@ -46,11 +48,18 @@ class FEM_frame:
         self.outDict["UnitScaling"]=self.plotScale
         self.outDict["Nodes"]=self.X.tolist()
         self.outDict["PlotDivisions"]=self.nrp
+        self.outDict["DeformTooLarge"]=int(any(self.V>1) or any(self.V<-1))
 
         self.exportDispPlot()
         self.exportForcePlot(1)
         self.exportForcePlot(2)
         self.exportForcePlot(3)
+
+        previewSupports(self)
+        previewHinge(self)
+        previewNodeload(self)
+        previewElementload(self)
+
         self.createJSON(respath)
 
     def sysStiff(self):
@@ -60,12 +69,16 @@ class FEM_frame:
             X1 = self.X[self.T[el][0]]
             X2 = self.X[self.T[el][1]]
             #Define element stiffness matrix
-            k=eleStiff(X1,X2,self.G[el])
+            k,kl=eleStiff(X1,X2,self.G[el])
             kk=k
             de=self.D[el]
             kk = np.vstack([de, kk])
             kk = np.hstack([np.concatenate(([-1],de))[np.newaxis].T, kk])
             self.outDict["ElementStiffnessSmall"].append(np.around(kk,0).tolist())
+            kkl=kl
+            kkl = np.vstack([de, kkl])
+            kkl = np.hstack([np.concatenate(([-1],de))[np.newaxis].T, kkl])
+            self.outDict["ElementStiffnessSmallLocal"].append(np.around(kkl,0).tolist())
             Kk = np.zeros((np.max(self.D)+1,np.max(self.D)+1))
             for i,dei in enumerate(de):
                 for j,dej in enumerate(de):

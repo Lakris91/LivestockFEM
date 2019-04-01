@@ -23,15 +23,15 @@ def eleStiff(X1,X2,G):
     # define k from local directions
     EA = G[0]*G[1]
     EI = G[0]*G[2]
-    k = array([[EA/L,   0,            0,          -EA/L,      0,            0        ],
+    kl = array([[EA/L,   0,            0,          -EA/L,      0,            0        ],
                [0,      12*EI/L**3,    6*EI/L**2,   0,          -12*EI/L**3,   6*EI/L**2 ],
                [0,      6*EI/L**2,     4*EI/L,     0,          -6*EI/L**2,    2*EI/L   ],
                [-EA/L,  0,            0,          EA/L,       0,            0        ],
                [0,      -12*EI/L**3,   -6*EI/L**2,  0,          12*EI/L**3,    -6*EI/L**2],
                [0,      6*EI/L**2,     2*EI/L,     0,          -6*EI/L**2,    4*EI/L   ]])
     # transform k to globale directions
-    k = np.transpose(A) @ k @ A
-    return k
+    k = np.transpose(A) @ kl @ A
+    return k, kl
 
 def eleLoad(X1,X2,dLe,ret):
     #Opstil elementlastvektor
@@ -60,7 +60,7 @@ def forceCalc(X1,X2,Ge,Ve,dLe,ret):
     #transformation matrix A
     A,L = transMat(X1,X2)
     #element stiffness matrix
-    k = eleStiff(X1,X2,Ge)
+    k,kl = eleStiff(X1,X2,Ge)
     #opstil belastningsvektor efter lokale retninger
     if ret == 1:
         #calc local nodeforcevector

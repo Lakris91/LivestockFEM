@@ -6,13 +6,18 @@ import dash_core_components as dcc
 import dash_html_components as html
 import timeit
 
-def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot2','ForcePlot3'],plotHeight=350):
+
+def plotDict(outDict,Plots=['Nodes','Elements','SupportViz','HingeViz','NodeloadViz','ElementloadViz','DOFPlot','ForcePlot1','ForcePlot2','ForcePlot3'],plotHeight=350):
     plotNames={ 'Nodes':'Nodes',
                 'Elements':'Elements',
                 'DOFPlot':'Deformation',
                 'ForcePlot1':'Normal Forces',
                 'ForcePlot2':'Shear Forces',
-                'ForcePlot3':'Bending Moments'
+                'ForcePlot3':'Bending Moments',
+                'SupportViz':'Supports',
+                'HingeViz':'Hinges',
+                'NodeloadViz':'Node Loads',
+                'ElementloadViz':'Element Loads'
                 }
 
     plotColors={'Nodes':'rgba(50,50,50,0.7)',
@@ -20,7 +25,11 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
                 'DOFPlot':'#E0A914',
                 'ForcePlot1':'#0F84B5',
                 'ForcePlot2':'#64B227',
-                'ForcePlot3':'#E50428'
+                'ForcePlot3':'#E50428',
+                'SupportViz':'rgba(50,50,50,0.7)',
+                'HingeViz':'#7d2ca5',
+                'NodeloadViz':'#b20000',
+                'ElementloadViz':'#2d7000'
                 }
     units={'1':'meter',
             '1000':'millimeter'}
@@ -38,6 +47,8 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
     num=np.arange(len(nodes))
     if 'Nodes' in Plots:
         scatterPlot.append(go.Scatter(x=nodes[:,0],y=nodes[:,1],name=plotNames['Nodes'],mode='markers+text',marker=dict(color=plotColors['Nodes']),text=num,textposition='top center' ))
+        scatterPlot[-1]['customdata']=['isnode']*len(nodes[:,0])
+        #scatterPlot.append(go.Scatter(x=nodes[:,0],y=nodes[:,1],name=plotNames['Nodes'],mode='markers+text',marker=dict(color=plotColors['Nodes'],symbol='triangle-se',size=10),text=num,textposition='top center' ))
     #Elements Plots
     if 'Elements' in Plots:
         elenum=[]
@@ -54,10 +65,39 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
         scatterPlot.append(go.Scatter(x=elex,y=eley,name=plotNames['Elements'],line=dict(color=plotColors['Elements'],dash = 'dot'),mode='lines+text',
                     text=np.array(elenum),textposition='top center'))
         scatterPlot[-1]['customdata']=elenum
-        #elementNo.append(elei)
+    if 'SupportViz' in Plots:
+        for i,sup in enumerate(outDict['SupportViz']):
+            scatterPlot.append(go.Scatter(x=np.array(sup).T[0],y=np.array(sup).T[1],name=plotNames['SupportViz'],line=dict(color=plotColors['SupportViz']),mode='lines',fill="toself",showlegend=False,hoverinfo='none'))
+    if 'HingeViz' in Plots:
+        for i, hin in enumerate(np.array(outDict["HingeViz"])):
+            scatterPlot.append(go.Scatter(x=hin[:,0],y=hin[:,1],name=plotNames['HingeViz'],line=dict(color=plotColors['SupportViz']),mode='lines',fill="toself",showlegend=False,hoverinfo='none'))
+    if 'NodeloadViz' in Plots:
+        for i, nl in enumerate(np.array(outDict["NodeloadViz"])):
+            minx=min(minx,np.min(nl[:,0]))
+            maxx=max(maxx,np.max(nl[:,0]))
+            miny=min(miny,np.min(nl[:,1]))
+            maxy=max(maxy,np.max(nl[:,1]))
+            size=int(np.linalg.norm(nl[2]-nl[-1])*(1/outDict['ForceScale']))
+            scatterPlot.append(go.Scatter(x=nl[:,0],y=nl[:,1],name=plotNames['NodeloadViz'],line=dict(color=plotColors['NodeloadViz']),mode='lines+text',text=[None,None,None,None,None,str(size)+'N'],textposition='top center',showlegend=not(bool(i)),hoverinfo='none'))
+    if 'ElementloadViz' in Plots:
+        for i,nl0 in enumerate(outDict["ElementloadViz"]):
+            for j,nl in enumerate(nl0):
+                nl=np.array(nl)
+                minx=min(minx,np.min(nl[:,0]))
+                maxx=max(maxx,np.max(nl[:,0]))
+                miny=min(miny,np.min(nl[:,1]))
+                maxy=max(maxy,np.max(nl[:,1]))
+                if j == 4:
+                    size=int(np.linalg.norm(nl[2]-nl[-1])*(1/outDict['ForceScale']))
+                    scatterPlot.append(go.Scatter(x=nl[:,0],y=nl[:,1],name=plotNames['ElementloadViz'],line=dict(color=plotColors['ElementloadViz']),mode='lines+text',text=[None,None,None,None,None,str(size)+'N/m'],textposition='top center',showlegend=not(bool(i)),hoverinfo='none'))
+                else:
+                    scatterPlot.append(go.Scatter(x=nl[:,0],y=nl[:,1],name=plotNames["ElementloadViz"],line=dict(color=plotColors["ElementloadViz"]),mode='lines',showlegend=False,hoverinfo='none'))
+
     #Deformation and forces plots
     for namei,plot in enumerate(Plots):
-        if plot == 'Nodes' or plot == 'Elements':
+        if plot == 'Nodes' or plot == 'Elements' or plot == 'SupportViz' or plot == 'HingeViz' or plot == 'NodeloadViz' or plot == 'ElementloadViz':
+            continue
+        if bool(outDict["DeformTooLarge"]) and plot =='DOFPlot':
             continue
         plotlist = np.array(outDict[plot])
         forcex=np.array([])
@@ -82,10 +122,16 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
             elif plot =='ForcePlot3':
                 scatterPlot.append(go.Scatter(x=x0[i],y=y0[i],text = [0]+outDict["MomentForcesPt"][i]+[0], hoverinfo = 'text',name=plotNames[plot],line=dict(color=plotColors[plot],width = 1),mode='lines',fill="toself",hoveron='points',showlegend=not(bool(i)),visible=True))
                 scatterPlot[-1]['customdata']=[i]*len(x0[i])
-    minx=int(math.floor(minx/unitfactor)*unitfactor-unitfactor/2)
-    miny=int(math.floor(miny/unitfactor)*unitfactor-unitfactor/2)
-    maxx=int(math.ceil(maxx/unitfactor)*unitfactor+unitfactor/2)
-    maxy=int(math.ceil(maxy/unitfactor)*unitfactor+unitfactor/2)
+    if round((minx%(unitfactor/2))*(1000/unitfactor))==0.0:minx-=(unitfactor/2)
+    if round((maxx%(unitfactor/2))*(1000/unitfactor))==0.0:maxx+=(unitfactor/2)
+    if round((miny%(unitfactor/2))*(1000/unitfactor))==0.0:miny-=(unitfactor/2)
+    if round((maxy%(unitfactor/2))*(1000/unitfactor))==0.0:maxy+=(unitfactor/2)
+
+    minx=math.floor(minx/(unitfactor/2))*(unitfactor/2)
+    miny=math.floor(miny/(unitfactor/2))*(unitfactor/2)
+    maxx=math.ceil(maxx/(unitfactor/2))*(unitfactor/2)
+    maxy=math.ceil(maxy/(unitfactor/2))*(unitfactor/2)
+
     xrange=[minx,maxx]
     yrange=[miny,maxy]
     stop = timeit.default_timer()
@@ -103,6 +149,7 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
                     'margin': '10px',
                     'resize': 'vertical',
                     'overflow': 'auto',
+                    #'width': "95%"
                 },
             figure={
                 'data': scatterPlot,
@@ -110,25 +157,24 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
                     autosize=True,
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    #width= (xrange[1]-xrange[0])/(yrange[1]-yrange[0])*plotHeight*1.5,
                     height=plotHeight,
                     xaxis={'title': units[str(int(unitfactor))],
                             'range' : xrange,
                             'zeroline':False,
                             'scaleanchor' : 'y',
-                            'tickvals':list(range(xrange[0],xrange[1],max(1,int(unitfactor/2)))),
+                            'tickvals':[minx+val*(unitfactor/2) for val in range(1+int((maxx-minx)/(unitfactor/2)))],
                             'tickangle':45
                             },
                     yaxis={'title': units[str(int(unitfactor))],
                             'range' : yrange,
                             'zeroline':False,
-                            'tickvals':list(range(yrange[0],yrange[1],max(1,int(unitfactor/2)))),
+                            'tickvals':[miny+val*(unitfactor/2) for val in range(1+int((maxy-miny)/(unitfactor/2)))],
                             'position':0.015
                             },
                     yaxis2={'title': units[str(int(unitfactor))],
                             'range' : yrange,
                             'zeroline':False,
-                            'tickvals':list(range(yrange[0],yrange[1],max(1,int(unitfactor/2)))),
+                            'tickvals':[miny+val*(unitfactor/2) for val in range(1+int((maxy-miny)/(unitfactor/2)))],
                             'anchor':'free',
                             'overlaying':'y',
                             'side':'left',
@@ -143,4 +189,6 @@ def plotDict(outDict,Plots=['Nodes','Elements','DOFPlot','ForcePlot1','ForcePlot
     ])
     stop = timeit.default_timer()
     print('Plot: ', stop - start)
+    if bool(outDict["DeformTooLarge"]):
+        femPlot.children.append(html.H4("Deformations too large to be plotted, please make sure your structure is supported in both the x-direction and the y-direction at least once.",style={'background-color': 'yellow'}))
     return femPlot

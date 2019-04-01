@@ -9,6 +9,7 @@ import math
 import json
 import timeit
 import sys
+import os
 from os import urandom
 from io import StringIO
 from flask import Flask
@@ -67,6 +68,7 @@ def matrixToHtml(matlist,hoverData,dofs,element=True,system=True):
 app.layout = html.Div(children=[
     # Hidden div inside the app that stores a variable instead of using Global that won't work on the server
     html.Div(id='GloVar_json', style={'display': 'none'}),
+    html.Div([],id='GloVar_json_changed', style={'display': 'none'}),
     html.Div(id='test', style={'display': 'none'}),
     html.Div([
         html.H1('LivestockFEM', style={'display': 'inline-block', 'margin-bottom':'0px','vertical-align': 'middle','padding-bottom':'0px'}),
@@ -75,8 +77,6 @@ app.layout = html.Div(children=[
         dragndrop('upload-data', 'Drag and Drop or ', 'Select Input File'),
         ],style={'display': 'inline-block', 'margin-bottom':'0px', 'margin-left':'8px','vertical-align': 'middle','padding-bottom':'0px'})
     ],style={'margin':'0px','padding':'0px'}),
-
-
 
     html.Div(id='checkboxes', style={'padding': 5,'margin-bottom':'0px','margin-top':'0px'}),
     html.Div(id='thePlot'),
@@ -128,11 +128,14 @@ def update_output(jsonStr):
               [Input(component_id='defText', component_property='value'),
                Input(component_id='forText', component_property='value'),
                Input(component_id='viewfilter', component_property='values'),
-               Input(component_id='plotHeight', component_property='value')
+               Input(component_id='plotHeight', component_property='value'),
+               Input(component_id='GloVar_json_changed', component_property='children')
                ],
               [State(component_id='GloVar_json', component_property='children')])
-def update_output(defVal, forVal, vfil,plotHeight, jsonStr):
+def update_output(defVal, forVal, vfil,plotHeight,jsonStr_new, jsonStr):
     start = timeit.default_timer()
+    if len(jsonStr_new)==2:
+        jsonStr=jsonStr_new
     if jsonStr is not None:
         jsonDict = json.loads(jsonStr[0])
         resultDict = json.loads(jsonStr[1])
@@ -164,24 +167,228 @@ def render_content(tab):
     else:
         return tab6()
 
-@app.callback(Output('hover-data', 'children'),
+@app.callback(Output('hover-data-matrix', 'children'),
     [Input('FEM-Plot', 'hoverData')],
     [State('GloVar_json', 'children')])
 def display_hover_data(hoverData,jsonStr):
     resJson=json.loads(jsonStr[1])
     try:
+        matrix2=[]
         elementNo=hoverData["points"][0]["customdata"]
         dofs=resJson["ElementStiffnessSmall"][elementNo][0][1:]
-        matrix2=["Current Element: "+ str(elementNo) + "\n"]
-        matrix2.extend("Element Degrees of Freedom: " + " ".join([str(int(dof)) for dof in dofs]) + "\n")
-        matrix2.extend("\nElement Stiffness Matrix, each row and column represents its Degree of Freedom (DOF):\n")
-        matrix2.extend(matrixToHtml(resJson["ElementStiffnessSmall"],hoverData,dofs,True,False))
-        matrix2.extend(["\nElement Stiffness Matrix Expanded, the Element Stiffness Matrix is expanded to the size of the System Stiffness Matrix based on the degree of freedom:\n"])
-        matrix2.extend(matrixToHtml(resJson["ElementStiffnessExpanded"],hoverData,dofs,True,True))
-        matrix2.extend(["\nSystem Stiffness Matrix, adding the expanded Element Stiffness Matrixes together forms the System Stiffness Matrix:\n"])
-        matrix2.extend(matrixToHtml(resJson["SystemStiffness"],hoverData,dofs,False,True))
+        matrix2.append(html.P("Current Element: "+ str(elementNo) + "\n"))
+        matrix2.append(html.P("Element Degrees of Freedom: " + " ".join([str(int(dof)) for dof in dofs]) + "\n"))
+        matrix2.append(html.Details([html.Summary('View explanation (Degrees of Freedom)'), html.Div([
+            html.Div("Each element has 6 degrees of freedom, 3 at each node, movement in the X-direction and the Y-direction along with clockwise rotation around the node. If two elements share a degree of freedom they will not be able to move or rotate independendant of each other."),
+            html.Img(src=app.get_asset_url('dof_nohinge_alpha.png')),
+            html.Div("If a hinge is added then an additional rotational degree of freedom is added to the node, this means the elements can rotate independant of each other around the node."),
+            html.Img(src=app.get_asset_url('dof_yeshinge_alpha.png')),
+            ])],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
+        matrix2.append(html.Br())
+        matrix2.append(html.B("Element Stiffness Matrix:"))
+        matrix2.append(html.P("Each row and column represents its Degree of Freedom (DOF), in local coordinate system."))
+        matrix2.append(html.Pre(matrixToHtml(resJson["ElementStiffnessSmallLocal"],hoverData,dofs,True,False)))
+        matrix2.append(html.P("Transformed to global coordinate system:"))
+        matrix2.append(html.Pre(matrixToHtml(resJson["ElementStiffnessSmall"],hoverData,dofs,True,False)))
+        matrix2.append(html.Details([html.Summary('View explanation (Element Stiffness Matrix)'), html.Div([
+            html.Div("An element stiffness matrix for the local coordinate system, k_local, can be put up column- and rowvise by setting a node displacement = 1 and the rest of node displacements = 0, as shown in the two examples below."),
+            html.Img(src=app.get_asset_url('elestiff_ex.png'),style={'width':'40%'}),
+            html.Div("The results from the figure above can then be set up in the local element stiffness matrix. "),
+            html.Img(src=app.get_asset_url('elestiff_mat.png'),style={'width':'30%'}),
+            html.Div("The local stiffness matrix is then transformed to global coordinate system, k, as shown below.\nThe transformation vector A is defined from the normalized (vector where the length equals 1) direction vector of the element, n, the direction vector is found by subtracting the first node from the second, and normalized by dividing it by lenght of the vector."),
+            html.Img(src=app.get_asset_url('transform_mat.png'),style={'width':'15%'}),
+            ])],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
+        matrix2.append(html.Br())
+        matrix2.append(html.B("Element Stiffness Matrix Expanded:"))
+        matrix2.append(html.P("The Element Stiffness Matrix is expanded to the size of the System Stiffness Matrix based on the degrees of freedom."))
+        matrix2.append(html.Details([html.Summary('View Expanded Element Stiffness Matrix'), html.Pre(matrixToHtml(resJson["ElementStiffnessExpanded"],hoverData,dofs,True,True))],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
+        matrix2.append(html.Details([html.Summary('View explanation (Expanded Element Stiffness Matrix)'), html.Div([
+            html.Div("The element stiffness matrix is expanded to the size of the system stiffness matrix, which have size N x N where N is the total of amount degrees of freedom in the system times.\nIn the unexpanded element stiffness matrix each row and column represents a degree of freedom, each cell of the matrix is insert in the expanded matrix based on the degree of freedom. \nThis expansion can be seen in example below, please note the example only contains 4 degrees of freedom per element, but principle is the same."),
+            html.Img(src=app.get_asset_url('expan_ex_1.png')),
+            html.Div("Looking at element 2, this element has the degrees of freedom: 1,2,5 and 6, there is 6 degrees of freedom in the system, this means the rows 3 and 4 along with columns 3 and 4 will be left empty (filled with 0) in the expanded matrix."),
+            html.Img(src=app.get_asset_url('expan_ex_2.png')),
+            ])],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
+        matrix2.append(html.Br())
+        matrix2.append(html.B("System Stiffness Matrix:"))
+        matrix2.append(html.P("Adding the expanded Element Stiffness Matrixes together forms the System Stiffness Matrix."))
+        matrix2.append(html.Details([html.Summary('View System Stiffness Matrix'), html.Pre(matrixToHtml(resJson["SystemStiffness"],hoverData,dofs,False,True))],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
+        matrix2.append(html.Details([html.Summary('View explanation (Expanded System Stiffness Matrix)'), html.Div([
+            html.Div("The system stiffness matrix, are simply the sum of all the expanded element stiffness matrix. This can be illustrated with the previous example."),
+            html.Img(src=app.get_asset_url('expan_ex_1.png')),
+            html.Img(src=app.get_asset_url('expan_ex_3.png')),
+            ])],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
+        matrix2.append(html.Pre("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"))
     except:
         matrix2 = ""
+    return matrix2
+
+@app.callback(Output('hover-data-nodes', 'children'),
+    [Input('FEM-Plot', 'clickData')])
+def display_hover_data(hoverData):
+    if not hoverData is None:
+        matrix2=[]
+        if "customdata" in hoverData["points"][0] and hoverData["points"][0]["customdata"]=='isnode':
+            nodeNo=hoverData["points"][0]["pointNumber"]
+            matrix2.append(html.Div("Current Node: "+ str(nodeNo),id='nodenumber'))
+            matrix2.append(html.Div([
+                html.Div(html.B("Coordinates:")),
+                html.Div(id="nodeXdiv"),
+                html.Div(id="nodeYdiv")
+                ],style={'width':'350px','display': 'inline-block'}))
+            matrix2.append(html.Div([
+                html.Div(html.B("Loads: ")),
+                html.Div(id="loaddirXdiv"),
+                html.Div(id="loaddirYdiv")
+                ],style={'width':'350px','display': 'inline-block'}))
+            matrix2.append(html.Div([
+                html.Div(html.B("Supports: ")),
+                html.Div(id="supportsDiv")
+                ],style={'width':'350px','display': 'inline-block'}))
+            matrix2.append(html.Br())
+            matrix2.append(html.Br())
+            matrix2.append(html.Div(html.Button('Apply Changes',id='applynode')))
+        return matrix2
+
+@app.callback(Output('nodeXdiv', 'children'),
+    [Input('FEM-Plot', 'clickData')])
+def update_x_input(clickData):
+    return [html.Div("X:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="nodeX",type='number',value=clickData["points"][0]["x"],style={'text-align': 'right','width':'150px'}),style={'display': 'inline-block'})]
+
+@app.callback(Output('nodeYdiv', 'children'),
+    [Input('FEM-Plot', 'clickData')])
+def update_x_input(clickData):
+    return [html.Div("Y:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="nodeY",type='number',value=clickData["points"][0]["y"],style={'text-align': 'right','width':'150px'}),style={'display': 'inline-block'})]
+
+@app.callback(Output('loaddirXdiv', 'children'),
+    [Input('FEM-Plot', 'clickData')],
+    [State('GloVar_json', 'children'),
+    State('GloVar_json_changed', 'children')])
+def update_x_input(clickData,jsonStr,jsonStr_new):
+    if len(jsonStr_new)==2:
+        jsonStr=jsonStr_new
+    inJson=json.loads(jsonStr[0])
+    loads=np.array(inJson["PyNodeLoad"]).T
+    nodedof=float(clickData["points"][0]["pointNumber"]*3)
+    if nodedof in loads[0]:
+        size=loads[1][loads[0].tolist().index(nodedof)]
+        return [html.Div("X-direction:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="loaddirX",type='number',value=size,style={'text-align': 'right', 'width':'150px'}),style={'display': 'inline-block'}),html.Div("N",style={'display': 'inline-block'})]
+    else:
+        return [html.Div("X-direction:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="loaddirX",type='number',value=0,style={'text-align': 'right', 'width':'150px'}),style={'display': 'inline-block'}),html.Div("N",style={'display': 'inline-block'})]
+
+@app.callback(Output('loaddirYdiv', 'children'),
+    [Input('FEM-Plot', 'clickData')],
+    [State('GloVar_json', 'children'),
+    State('GloVar_json_changed', 'children')])
+def update_x_input(clickData,jsonStr,jsonStr_new):
+    if len(jsonStr_new)==2:
+        jsonStr=jsonStr_new
+    inJson=json.loads(jsonStr[0])
+    loads=np.array(inJson["PyNodeLoad"]).T
+    nodedof=float(clickData["points"][0]["pointNumber"]*3+1)
+    if nodedof in loads[0]:
+        size=loads[1][loads[0].tolist().index(nodedof)]
+        return [html.Div("Y-direction:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="loaddirY",type='number',value=size,style={'text-align': 'right', 'width':'150px'}),style={'display': 'inline-block'}),html.Div("N",style={'display': 'inline-block'})]
+    else:
+        return [html.Div("Y-direction:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="loaddirY",type='number',value=0,style={'text-align': 'right', 'width':'150px'}),style={'display': 'inline-block'}),html.Div("N",style={'display': 'inline-block'})]
+
+@app.callback(Output('supportsDiv', 'children'),
+    [Input('FEM-Plot', 'clickData')],
+    [State('GloVar_json', 'children'),
+    State('GloVar_json_changed', 'children')])
+def update_x_input(clickData,jsonStr,jsonStr_new):
+    if len(jsonStr_new)==2:
+        jsonStr=jsonStr_new
+    inJson=json.loads(jsonStr[0])
+    supports=inJson["PySupport"]
+    nodedofx=clickData["points"][0]["pointNumber"]*3
+    nodedofy=clickData["points"][0]["pointNumber"]*3+1
+    nodedofrot=clickData["points"][0]["pointNumber"]*3+2
+    val=[]
+    if nodedofx in  supports:
+        val.append('X')
+    if nodedofy in  supports:
+        val.append('Y')
+    if nodedofrot in  supports:
+        val.append('R')
+    check=dcc.Checklist(
+        id='supportCheck',
+        options=[
+            {'label': 'X', 'value': 'X'},
+            {'label': 'Y', 'value': 'Y'},
+            {'label': 'Rotation', 'value': 'R'}
+        ],
+        values=val
+    )
+    return check
+
+@app.callback(Output(component_id='GloVar_json_changed', component_property='children'),
+                [
+                Input(component_id='applynode', component_property='n_clicks'),
+                ],
+                [
+                State(component_id='nodenumber', component_property='children'),
+                State(component_id='nodeX', component_property='value'),
+                State(component_id='nodeY', component_property='value'),
+                State(component_id='loaddirX', component_property='value'),
+                State(component_id='loaddirY', component_property='value'),
+                State(component_id='supportCheck', component_property='values'),
+                State(component_id='GloVar_json', component_property='children'),
+                State(component_id='GloVar_json_changed', component_property='children')
+                ])
+def update_output(n_clicks,nodenumber,nodeX,nodeY,loaddirX,loaddirY,supportCheck,jsonStr_ori,jsonStr_new):
+    if len(jsonStr_new) == 0:
+        inJson=json.loads(jsonStr_ori[0])
+    else:
+        inJson=json.loads(jsonStr_new[0])
+    nodeInt=int(nodenumber.replace("Current Node: ",""))
+    scale=inJson["UnitScaling"]
+    inJson["PyNodes"][nodeInt]=[nodeX/scale,nodeY/scale]
+    loaddoflist=(np.array(inJson['PyNodeLoad']).T[0]).tolist()
+
+    if not nodeInt*3 in loaddoflist and float(loaddirX) != 0.0:
+        inJson['PyNodeLoad'].append([nodeInt*3,float(loaddirX)])
+    elif nodeInt*3 in loaddoflist and float(loaddirX) == 0.0:
+        inJson['PyNodeLoad'].pop(loaddoflist.index(nodeInt*3))
+    elif nodeInt*3 in loaddoflist:
+        inJson['PyNodeLoad'][loaddoflist.index(nodeInt*3)]=[nodeInt*3,float(loaddirX)]
+
+    if not nodeInt*3+1 in loaddoflist and float(loaddirY) != 0.0:
+        inJson['PyNodeLoad'].append([nodeInt*3+1,float(loaddirY)])
+    elif nodeInt*3+1 in loaddoflist and float(loaddirY) == 0.0:
+        inJson['PyNodeLoad'].pop(loaddoflist.index(nodeInt*3+1))
+    elif nodeInt*3+1 in loaddoflist:
+        inJson['PyNodeLoad'][loaddoflist.index(nodeInt*3+1)]=[nodeInt*3+1,float(loaddirY)]
+
+    if nodeInt*3 not in inJson['PySupport'] and 'X' in supportCheck:
+        inJson['PySupport'].append(nodeInt*3)
+    elif nodeInt*3 in inJson['PySupport'] and 'X' not in supportCheck:
+        inJson['PySupport'].remove(nodeInt*3)
+    if nodeInt*3+1 not in inJson['PySupport'] and 'Y' in supportCheck:
+        inJson['PySupport'].append(nodeInt*3+1)
+    elif nodeInt*3+1 in inJson['PySupport'] and 'Y' not in supportCheck:
+        inJson['PySupport'].remove(nodeInt*3+1)
+    if nodeInt*3+2 not in inJson['PySupport'] and 'R' in supportCheck:
+        inJson['PySupport'].append(nodeInt*3+2)
+    elif nodeInt*3+2 in inJson['PySupport'] and 'R' not in supportCheck:
+        inJson['PySupport'].remove(nodeInt*3+2)
+
+    inJson['PySupport']=sorted(inJson['PySupport'])
+    resultDict = FEM_frame(inJson).outDict
+    return json.dumps(inJson), json.dumps(resultDict)
+
+@app.callback(Output('hover-data-elements', 'children'),
+    [Input('FEM-Plot', 'hoverData')],
+    [State('GloVar_json', 'children')])
+def display_hover_data(hoverData,jsonStr):
+    resJson=json.loads(jsonStr[1])
+    try:
+        matrix2=[]
+        elementNo=hoverData["points"][0]["customdata"]
+        dofs=resJson["ElementStiffnessSmall"][elementNo][0][1:]
+        matrix2.append(html.P("Current Element: "+ str(elementNo) + "\n"))
+        matrix2.append(html.P("Element Degrees of Freedom: " + " ".join([str(int(dof)) for dof in dofs]) + "\n"))
+    except:
+        matrix2=""
     return matrix2
 
 @app.callback(Output('results-div', 'children'),
@@ -189,7 +396,6 @@ def display_hover_data(hoverData,jsonStr):
     Input('GloVar_json', 'children')])
 def update_output2(value,jsonStr):
     resJson=json.loads(jsonStr[1])
-
 
     if value=='overview':
         maxDisp=np.max(np.array(resJson["DefDist"]))
