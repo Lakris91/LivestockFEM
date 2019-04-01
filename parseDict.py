@@ -31,8 +31,13 @@ def plotDict(outDict,Plots=['Nodes','Elements','SupportViz','HingeViz','Nodeload
                 'NodeloadViz':'#b20000',
                 'ElementloadViz':'#2d7000'
                 }
-    units={'1':'meter',
-            '1000':'millimeter'}
+    units={
+    '0.001':'kilometer',
+    '1.0':'meter',
+    '10.0':'decimeter',
+    '100.0':'centimeter',
+    '1000.0':'millimeter'
+    }
     unitfactor=outDict['UnitScaling']
     scatterPlot=[]
     elementNo=[]
@@ -158,20 +163,20 @@ def plotDict(outDict,Plots=['Nodes','Elements','SupportViz','HingeViz','Nodeload
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
                     height=plotHeight,
-                    xaxis={'title': units[str(int(unitfactor))],
+                    xaxis={'title': units[str(unitfactor)],
                             'range' : xrange,
                             'zeroline':False,
                             'scaleanchor' : 'y',
                             'tickvals':[minx+val*(unitfactor/2) for val in range(1+int((maxx-minx)/(unitfactor/2)))],
                             'tickangle':45
                             },
-                    yaxis={'title': units[str(int(unitfactor))],
+                    yaxis={'title': units[str(unitfactor)],
                             'range' : yrange,
                             'zeroline':False,
                             'tickvals':[miny+val*(unitfactor/2) for val in range(1+int((maxy-miny)/(unitfactor/2)))],
                             'position':0.015
                             },
-                    yaxis2={'title': units[str(int(unitfactor))],
+                    yaxis2={'title': units[str(unitfactor)],
                             'range' : yrange,
                             'zeroline':False,
                             'tickvals':[miny+val*(unitfactor/2) for val in range(1+int((maxy-miny)/(unitfactor/2)))],

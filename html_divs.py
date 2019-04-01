@@ -101,7 +101,7 @@ def tab1():
 
 def tab2():
     tabDiv = html.Div([
-        dcc.Markdown("**Hover the mouse over an element to see information.**"),
+        dcc.Markdown("**Click on an element to see information.**"),
         html.Div(id='hover-data-elements',style={'overflow-x':'auto'})
         ])
     return tabDiv

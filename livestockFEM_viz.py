@@ -44,8 +44,6 @@ def previewSupports(self):
         xbound = abs(x-bboxmaxX)>abs(x-bboxminX)
         ybound = abs(y-bboxmaxY)>abs(y-bboxminY)
         bound = [abs(y-bboxminY),abs(y-bboxmaxY),abs(x-bboxminX),abs(x-bboxmaxX)].index(min(abs(x-bboxmaxX),abs(x-bboxminX),abs(y-bboxmaxY),abs(y-bboxminY)))
-        print([bboxminY,bboxmaxY,bboxminX,bboxmaxX])
-        print([abs(y-bboxminY),abs(y-bboxmaxY),abs(x-bboxminX),abs(x-bboxmaxX)])
         loco = Locks[i].count(True)
         if loco == 1:
             if Locks[i][0]==True:
