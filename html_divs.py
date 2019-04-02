@@ -95,14 +95,14 @@ def viewFilter(jsonDict):
 def tab1():
     tabDiv = html.Div([
         dcc.Markdown("**Click on a node to see information.**"),
-        html.Div(id='hover-data-nodes',style={'overflow-x':'auto'})
+        html.Div(id='click-data-nodes')
         ])
     return tabDiv
 
 def tab2():
     tabDiv = html.Div([
         dcc.Markdown("**Click on an element to see information.**"),
-        html.Div(id='hover-data-elements',style={'overflow-x':'auto'})
+        html.Div(id='click-data-elements')
         ])
     return tabDiv
 

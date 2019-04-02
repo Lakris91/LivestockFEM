@@ -227,37 +227,43 @@ def display_hover_data(hoverData,jsonStr):
 
 # ----NODES TAB-------------------------------------------------------------------------------------------------------------
 
-@app.callback(Output('hover-data-nodes', 'children'),
+@app.callback(Output('click-data-nodes', 'children'),
     [Input('FEM-Plot', 'clickData')])
-def display_hover_data(clickData):
+def display_click_data(clickData):
     if not clickData is None:
-        matrix2=[]
+        nodeTab=[]
         if "customdata" in clickData["points"][0] and clickData["points"][0]["customdata"]=='isnode':
             nodeNo=clickData["points"][0]["pointNumber"]
-            matrix2.append(html.Div("Current Node: "+ str(nodeNo),id='nodenumber'))
-            matrix2.append(html.Br())
-            matrix2.append(html.Div([
+            nodeTab.append(html.Div("Current Node: "+ str(nodeNo),id='nodenumber'))
+            nodeTab.append(html.Br())
+            nodeTab.append(html.Div([
                 html.Div(html.B("Coordinates:")),
-                #html.Div(id="nodeXdiv"),
-                html.Div([html.Div("X:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="nodeX",type='number',value=clickData["points"][0]["x"],style={'text-align': 'right','width':'150px'}),id="nodeXdiv",style={'display': 'inline-block'})]),
-                #html.Div(id="nodeYdiv")
-                html.Div([html.Div("Y:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="nodeY",type='number',value=clickData["points"][0]["y"],style={'text-align': 'right','width':'150px'}),id="nodeYdiv",style={'display': 'inline-block'})])
+                html.Div([
+                    html.Div("X:",style={'width': '100px', 'display': 'inline-block'}),
+                    html.Div(dcc.Input(id="nodeX",type='number',value=clickData["points"][0]["x"],style={'text-align': 'right','width':'150px'}),id="nodeXdiv",style={'display': 'inline-block'})]),
+                html.Div([
+                    html.Div("Y:",style={'width': '100px', 'display': 'inline-block'}),
+                    html.Div(dcc.Input(id="nodeY",type='number',value=clickData["points"][0]["y"],style={'text-align': 'right','width':'150px'}),id="nodeYdiv",style={'display': 'inline-block'})])
                 ],style={'width':'350px','display': 'inline-block'}))
-            matrix2.append(html.Div([
+            nodeTab.append(html.Div([
                 html.Div(html.B("Loads: ")),
-                #html.Div(id="loaddirXdiv"),
-                html.Div([html.Div("X-direction:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="loaddirX",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'}),id='loaddirXdiv',style={'display': 'inline-block'}),html.Div("N",style={'display': 'inline-block'})]),
-                #html.Div(id="loaddirYdiv")
-                html.Div([html.Div("Y-direction:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="loaddirY",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'}),id='loaddirYdiv',style={'display': 'inline-block'}),html.Div("N",style={'display': 'inline-block'})])
+                html.Div([
+                    html.Div("X-direction:",style={'width': '100px', 'display': 'inline-block'}),
+                    html.Div(dcc.Input(id="loaddirX",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'}),id='loaddirXdiv',style={'display': 'inline-block'}),
+                    html.Div("N",style={'display': 'inline-block'})]),
+                html.Div([
+                    html.Div("Y-direction:",style={'width': '100px', 'display': 'inline-block'}),
+                    html.Div(dcc.Input(id="loaddirY",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'}),id='loaddirYdiv',style={'display': 'inline-block'}),
+                    html.Div("N",style={'display': 'inline-block'})])
                 ],style={'width':'350px','display': 'inline-block'}))
-            matrix2.append(html.Div([
+            nodeTab.append(html.Div([
                 html.Div(html.B("Supports: ")),
-                html.Div(id="supportsDiv")
+                html.Div(dcc.Checklist(id='supportCheck',options=[{'label': 'X', 'value': 'X'},{'label': 'Y', 'value': 'Y'},{'label': 'Rotation', 'value': 'R'}],values=[]),id="supportsDiv")
                 ],style={'width':'350px','display': 'inline-block'}))
-            matrix2.append(html.Br())
-            matrix2.append(html.Br())
-            matrix2.append(html.Div(html.Button('Apply Changes',id='applynode')))
-        return matrix2
+            nodeTab.append(html.Br())
+            nodeTab.append(html.Br())
+            nodeTab.append(html.Div(html.Button('Apply Changes',id='applynode')))
+        return nodeTab
 
 @app.callback(Output('nodeXdiv', 'children'),
     [Input('FEM-Plot', 'clickData')])
@@ -385,49 +391,78 @@ def update_output(n_clicks,nodenumber,nodeX,nodeY,loaddirX,loaddirY,supportCheck
 
 # ----ELEMENTS TAB-------------------------------------------------------------------------------------------------------------
 
-@app.callback(Output('hover-data-elements', 'children'),
+@app.callback(Output('click-data-elements', 'children'),
     [Input('FEM-Plot', 'clickData')],
     [State('GloVar_json', 'children'),
     State('GloVar_json_changed', 'children')])
-def display_hover_data(hoverData,jsonStr,jsonStr_new):
+def display_click_data(clickData,jsonStr,jsonStr_new):
     if len(jsonStr_new)==2:
         jsonStr=jsonStr_new
-    matrix2=[]
-    if not hoverData is None:
+
+    inJson=json.loads(jsonStr[0])
+    units={
+        '0.001':'km',
+        '1.0':'m',
+        '10.0':'dm',
+        '100.0':'cm',
+        '1000.0':'mm'
+        }
+    inJson=json.loads(jsonStr[0])
+    unit=units[str(inJson["UnitScaling"])]
+
+    elementTab=[]
+    if not clickData is None:
         resJson=json.loads(jsonStr[1])
-        if "customdata" in hoverData["points"][0] and hoverData["points"][0]["customdata"]!='isnode':
-            elementNo=hoverData["points"][0]["customdata"]
-            dofs=resJson["ElementStiffnessSmall"][elementNo][0][1:]
-            matrix2.append(html.Div("Current Element: "+ str(elementNo),id='elenumber'))
-            matrix2.append(html.Div("Element Degrees of Freedom: " + " ".join([str(int(dof)) for dof in dofs])))
-            matrix2.append(html.Br())
-            matrix2.append(html.Div([
+        if "customdata" in clickData["points"][0] and clickData["points"][0]["customdata"]!='isnode':
+            elementNo=clickData["points"][0]["customdata"]
+            elementTab.append(html.Div("Current Element: "+ str(elementNo),id='elenumber'))
+            elementTab.append(html.Br())
+            elementTab.append(html.Div([
                 html.Div(html.B("Nodes:")),
-                html.Div(id="eleStart"),
-                html.Div(id="eleEnd")
-                ],style={'width':'350px','display': 'inline-block','height':'150px','vertical-align': 'top'}))
-            matrix2.append(html.Div([
+                html.Div([
+                    html.Div("Start Node:",style={'width': '100px', 'display': 'inline-block'}),
+                    html.Div(dcc.Input(id="stNo",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id="eleStart",style={'display': 'inline-block'})]),
+                html.Div([
+                    html.Div("End Node:",style={'width': '100px', 'display': 'inline-block'}),
+                    html.Div(dcc.Input(id="enNo",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id="eleEnd",style={'display': 'inline-block'})])
+            ],style={'width':'350px','display': 'inline-block','height':'150px','vertical-align': 'top'}))
+            elementTab.append(html.Div([
                 html.Div(html.B("Loads: ")),
-                html.Div(id="eleloaddirXdiv"),
-                html.Div(id="eleloaddirYdiv"),
+                html.Div([
+                    html.Div("X-direction:",style={'width': '100px', 'display': 'inline-block'}),
+                    html.Div(dcc.Input(id="eleXdir",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id='eleXdirdiv',style={'display': 'inline-block'}),
+                    html.Div("N/m",style={'display': 'inline-block'})]),
+                html.Div([
+                    html.Div("Y-direction:",style={'width': '100px', 'display': 'inline-block'}),
+                    html.Div(dcc.Input(id="eleYdir",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id='eleYdirdiv',style={'display': 'inline-block'}),
+                    html.Div("N/m",style={'display': 'inline-block'})]),
                 html.Div(dcc.RadioItems(
                     id='localglobal',
                     options=[
-                        {'label': 'Local', 'value': 'local'},
-                        {'label': 'Global', 'value': 'global'},
+                        {'label': 'Local Coordinates (X-axis parallel to element)', 'value': 'local'},
+                        {'label': 'Global Coordines', 'value': 'global'},
                     ],
                     value='local',
-                    labelStyle={'display': 'inline-block'}
                 ))
                 ],style={'width':'350px','display': 'inline-block','height':'150px','vertical-align': 'top'}))
-            matrix2.append(html.Div([
+            elementTab.append(html.Div([
                 html.Div(html.B("Beam Parameters: ")),
-                html.Div(id="areaDiv"),
-                html.Div(id="inertiaDiv"),
-                html.Div(id="emodulusDiv"),
+                html.Div([
+                    html.Div("Section Area:",style={'width': '130px', 'display': 'inline-block'}),
+                    html.Div(dcc.Input(id="sarea",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id="areaDiv",style={'display': 'inline-block'}),
+                    html.Div(unit+'2',style={'display': 'inline-block'})]),
+                html.Div([
+                    html.Div("Moment of inertia:",style={'width': '130px', 'display': 'inline-block'}),
+                    html.Div(dcc.Input(id="inert",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id="inertiaDiv",style={'display': 'inline-block'}),
+                    html.Div(unit+'4',style={'display': 'inline-block'})]),
+                html.Div([html.Div("E-modulus:",style={'width': '130px', 'display': 'inline-block'}),
+                    html.Div(dcc.Input(id="emod",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id="emodulusDiv",style={'display': 'inline-block'}),
+                    html.Div("Pa",style={'display': 'inline-block'})])
                 ],style={'width':'350px','display': 'inline-block','height':'150px','vertical-align': 'top'}))
-            matrix2.append(html.Div(html.Button('Apply Changes',id='applyelement')))
-    return matrix2
+            elementTab.append(html.Br())
+            elementTab.append(html.Br())
+            elementTab.append(html.Div(html.Button('Apply Changes',id='applyelement')))
+    return elementTab
 
 @app.callback(Output('eleStart', 'children'),
     [Input('FEM-Plot', 'clickData')],
@@ -439,7 +474,7 @@ def update_x_input(clickData,jsonStr,jsonStr_new):
     inJson=json.loads(jsonStr[0])
     elements=inJson["PyElements"]
     eleNo=clickData["points"][0]["customdata"]
-    return [html.Div("Start Node:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="stNo",type='number',value=elements[eleNo][0],style={'text-align': 'right', 'width':'150px'}),style={'display': 'inline-block'})]
+    return dcc.Input(id="stNo",type='number',value=elements[eleNo][0],style={'text-align': 'right', 'width':'150px'})
 
 @app.callback(Output('eleEnd', 'children'),
     [Input('FEM-Plot', 'clickData')],
@@ -451,47 +486,20 @@ def update_x_input(clickData,jsonStr,jsonStr_new):
     inJson=json.loads(jsonStr[0])
     elements=inJson["PyElements"]
     eleNo=clickData["points"][0]["customdata"]
-    return [html.Div("End Node:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="enNo",type='number',value=elements[eleNo][1],style={'text-align': 'right', 'width':'150px'}),style={'display': 'inline-block'})]
-
-@app.callback(Output('eleloaddirXdiv', 'children'),
-    [Input('FEM-Plot', 'clickData')],
-    [State('GloVar_json', 'children'),
-    State('GloVar_json_changed', 'children')])
-def update_x_input(clickData,jsonStr,jsonStr_new):
-    if len(jsonStr_new)==2:
-        jsonStr=jsonStr_new
-    inJson=json.loads(jsonStr[0])
-    elements=inJson["PyElements"]
-    eleNo=clickData["points"][0]["customdata"]
-    loadvec=np.round(np.array(inJson['PyElementLoad']))
-    return [html.Div("X-direction:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="eleXdir",type='number',value=loadvec[eleNo][0],style={'text-align': 'right', 'width':'150px'}),id='eleXdirdiv',style={'display': 'inline-block'}),html.Div("N/m",style={'display': 'inline-block'})]
-
-@app.callback(Output('eleloaddirYdiv', 'children'),
-    [Input('FEM-Plot', 'clickData')],
-    [State('GloVar_json', 'children'),
-    State('GloVar_json_changed', 'children')])
-def update_x_input(clickData,jsonStr,jsonStr_new):
-    if len(jsonStr_new)==2:
-        jsonStr=jsonStr_new
-    inJson=json.loads(jsonStr[0])
-    elements=inJson["PyElements"]
-    eleNo=clickData["points"][0]["customdata"]
-    loadvec=np.round(np.array(inJson['PyElementLoad']))
-    return [html.Div("Y-direction:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="eleYdir",type='number',value=loadvec[eleNo][1],style={'text-align': 'right', 'width':'150px'}),id='eleYdirdiv',style={'display': 'inline-block'}),html.Div("N/m",style={'display': 'inline-block'})]
+    return dcc.Input(id="enNo",type='number',value=elements[eleNo][1],style={'text-align': 'right', 'width':'150px'})
 
 @app.callback(Output('eleXdirdiv', 'children'),
-    [Input('localglobal','value')],
+    [Input('FEM-Plot', 'clickData'),
+    Input('localglobal','value')],
     [State('GloVar_json', 'children'),
-    State('GloVar_json_changed', 'children'),
-    State('eleXdir', 'value'),
-    State('elenumber','children')])
-def update_x_input(localglobal,jsonStr,jsonStr_new,xdir,eleNo):
+    State('GloVar_json_changed', 'children')])
+def update_x_input(clickData,localglobal,jsonStr,jsonStr_new):
     if len(jsonStr_new)==2:
         jsonStr=jsonStr_new
     inJson=json.loads(jsonStr[0])
     elements=inJson["PyElements"]
-    eleNo=int(eleNo.replace("Current Element: ",""))
-    load=np.array(inJson["PyElementLoad"][eleNo])
+    eleNo=clickData["points"][0]["customdata"]
+    load=np.round(np.array(inJson['PyElementLoad']))[eleNo]
     if localglobal=='global':
         if load[0]==0.0 and load[1]==0.0:
             return dcc.Input(id="eleXdir",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'})
@@ -509,24 +517,23 @@ def update_x_input(localglobal,jsonStr,jsonStr_new,xdir,eleNo):
         load[1]=x*math.sin(ang)+y*math.cos(ang)
         return dcc.Input(id="eleXdir",type='number',value=round(load[0]),style={'text-align': 'right', 'width':'150px'})
     else:
-        return dcc.Input(id="eleXdir",type='number',value=round(load[0]),style={'text-align': 'right', 'width':'150px'})
+        return dcc.Input(id="eleXdir",type='number',value=load[0],style={'text-align': 'right', 'width':'150px'})
 
 @app.callback(Output('eleYdirdiv', 'children'),
-    [Input('localglobal','value')],
+    [Input('FEM-Plot', 'clickData'),
+    Input('localglobal','value')],
     [State('GloVar_json', 'children'),
-    State('GloVar_json_changed', 'children'),
-    State('eleYdir', 'value'),
-    State('elenumber','children')])
-def update_x_input(localglobal,jsonStr,jsonStr_new,xdir,eleNo):
+    State('GloVar_json_changed', 'children')])
+def update_x_input(clickData,localglobal,jsonStr,jsonStr_new):
     if len(jsonStr_new)==2:
         jsonStr=jsonStr_new
     inJson=json.loads(jsonStr[0])
     elements=inJson["PyElements"]
-    eleNo=int(eleNo.replace("Current Element: ",""))
-    load=np.array(inJson["PyElementLoad"][eleNo])
+    eleNo=clickData["points"][0]["customdata"]
+    load=np.round(np.array(inJson['PyElementLoad']))[eleNo]
     if localglobal=='global':
         if load[0]==0.0 and load[1]==0.0:
-            return dcc.Input(id="eleYdir",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'})
+            return dcc.Input(id="eleXdir",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'})
         nodes=np.array(inJson['PyNodes'])[elements[eleNo]]
         v = nodes[1]-nodes[0]
         if v[0]==0 and v[1]>0:
@@ -541,7 +548,35 @@ def update_x_input(localglobal,jsonStr,jsonStr_new,xdir,eleNo):
         load[1]=x*math.sin(ang)+y*math.cos(ang)
         return dcc.Input(id="eleYdir",type='number',value=round(load[1]),style={'text-align': 'right', 'width':'150px'})
     else:
-        return dcc.Input(id="eleYdir",type='number',value=round(load[1]),style={'text-align': 'right', 'width':'150px'})
+        return dcc.Input(id="eleYdir",type='number',value=load[1],style={'text-align': 'right', 'width':'150px'})
+
+@app.callback(Output('areaDiv', 'children'),
+    [Input('FEM-Plot', 'clickData')],
+    [State('GloVar_json', 'children'),
+    State('GloVar_json_changed', 'children')])
+def update_x_input(clickData,jsonStr,jsonStr_new):
+    if len(jsonStr_new)==2:
+        jsonStr=jsonStr_new
+    inJson=json.loads(jsonStr[0])
+    materials=inJson["PyMaterial"]
+    scale=inJson["UnitScaling"]
+    eleNo=clickData["points"][0]["customdata"]
+    mat=materials[eleNo][1]*(scale**2)
+    return dcc.Input(id="sarea",type='number',value=mat,style={'text-align': 'right', 'width':'150px'})
+
+@app.callback(Output('inertiaDiv', 'children'),
+    [Input('FEM-Plot', 'clickData')],
+    [State('GloVar_json', 'children'),
+    State('GloVar_json_changed', 'children')])
+def update_x_input(clickData,jsonStr,jsonStr_new):
+    if len(jsonStr_new)==2:
+        jsonStr=jsonStr_new
+    inJson=json.loads(jsonStr[0])
+    materials=inJson["PyMaterial"]
+    scale=inJson["UnitScaling"]
+    eleNo=clickData["points"][0]["customdata"]
+    mat=materials[eleNo][2]*(scale**4)
+    return dcc.Input(id="inert",type='number',value=mat,style={'text-align': 'right', 'width':'150px'})
 
 @app.callback(Output('emodulusDiv', 'children'),
     [Input('FEM-Plot', 'clickData')],
@@ -552,51 +587,8 @@ def update_x_input(clickData,jsonStr,jsonStr_new):
         jsonStr=jsonStr_new
     inJson=json.loads(jsonStr[0])
     materials=inJson["PyMaterial"]
-    scale=inJson["UnitScaling"]
     eleNo=clickData["points"][0]["customdata"]
-    return [html.Div("E-modulus:",style={'width': '130px', 'display': 'inline-block'}),html.Div(dcc.Input(id="emod",type='number',value=materials[eleNo][0],style={'text-align': 'right', 'width':'150px'}),style={'display': 'inline-block'}),html.Div("Pa",style={'display': 'inline-block'})]
-
-@app.callback(Output('areaDiv', 'children'),
-    [Input('FEM-Plot', 'clickData')],
-    [State('GloVar_json', 'children'),
-    State('GloVar_json_changed', 'children')])
-def update_x_input(clickData,jsonStr,jsonStr_new):
-    if len(jsonStr_new)==2:
-        jsonStr=jsonStr_new
-    units={
-        '0.001':'km',
-        '1.0':'m',
-        '10.0':'dm',
-        '100.0':'cm',
-        '1000.0':'mm'
-        }
-    inJson=json.loads(jsonStr[0])
-    materials=inJson["PyMaterial"]
-    scale=inJson["UnitScaling"]
-    eleNo=clickData["points"][0]["customdata"]
-    mat=materials[eleNo][1]*(scale**2)
-    return [html.Div("Section Area:",style={'width': '130px', 'display': 'inline-block'}),html.Div(dcc.Input(id="sarea",type='number',value=mat,style={'text-align': 'right', 'width':'150px'}),style={'display': 'inline-block'}),html.Div(units[str(scale)]+'2',style={'display': 'inline-block'})]
-
-@app.callback(Output('inertiaDiv', 'children'),
-    [Input('FEM-Plot', 'clickData')],
-    [State('GloVar_json', 'children'),
-    State('GloVar_json_changed', 'children')])
-def update_x_input(clickData,jsonStr,jsonStr_new):
-    if len(jsonStr_new)==2:
-        jsonStr=jsonStr_new
-    units={
-        '0.001':'km',
-        '1.0':'m',
-        '10.0':'dm',
-        '100.0':'cm',
-        '1000.0':'mm'
-        }
-    inJson=json.loads(jsonStr[0])
-    materials=inJson["PyMaterial"]
-    scale=inJson["UnitScaling"]
-    eleNo=clickData["points"][0]["customdata"]
-    mat=materials[eleNo][2]*(scale**4)
-    return [html.Div("Moment of inertia:",style={'width': '130px', 'display': 'inline-block'}),html.Div(dcc.Input(id="inert",type='number',value=mat,style={'text-align': 'right', 'width':'150px'}),style={'display': 'inline-block'}),html.Div(units[str(scale)]+'4',style={'display': 'inline-block'})]
+    return dcc.Input(id="emod",type='number',value=materials[eleNo][0],style={'text-align': 'right', 'width':'150px'})
 
 @app.callback(Output(component_id='elements_changed', component_property='children'),
                 [Input(component_id='applyelement', component_property='n_clicks')],
