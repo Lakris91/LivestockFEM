@@ -229,22 +229,26 @@ def display_hover_data(hoverData,jsonStr):
 
 @app.callback(Output('hover-data-nodes', 'children'),
     [Input('FEM-Plot', 'clickData')])
-def display_hover_data(hoverData):
-    if not hoverData is None:
+def display_hover_data(clickData):
+    if not clickData is None:
         matrix2=[]
-        if "customdata" in hoverData["points"][0] and hoverData["points"][0]["customdata"]=='isnode':
-            nodeNo=hoverData["points"][0]["pointNumber"]
+        if "customdata" in clickData["points"][0] and clickData["points"][0]["customdata"]=='isnode':
+            nodeNo=clickData["points"][0]["pointNumber"]
             matrix2.append(html.Div("Current Node: "+ str(nodeNo),id='nodenumber'))
             matrix2.append(html.Br())
             matrix2.append(html.Div([
                 html.Div(html.B("Coordinates:")),
-                html.Div(id="nodeXdiv"),
-                html.Div(id="nodeYdiv")
+                #html.Div(id="nodeXdiv"),
+                html.Div([html.Div("X:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="nodeX",type='number',value=clickData["points"][0]["x"],style={'text-align': 'right','width':'150px'}),id="nodeXdiv",style={'display': 'inline-block'})]),
+                #html.Div(id="nodeYdiv")
+                html.Div([html.Div("Y:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="nodeY",type='number',value=clickData["points"][0]["y"],style={'text-align': 'right','width':'150px'}),id="nodeYdiv",style={'display': 'inline-block'})])
                 ],style={'width':'350px','display': 'inline-block'}))
             matrix2.append(html.Div([
                 html.Div(html.B("Loads: ")),
-                html.Div(id="loaddirXdiv"),
-                html.Div(id="loaddirYdiv")
+                #html.Div(id="loaddirXdiv"),
+                html.Div([html.Div("X-direction:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="loaddirX",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'}),id='loaddirXdiv',style={'display': 'inline-block'}),html.Div("N",style={'display': 'inline-block'})]),
+                #html.Div(id="loaddirYdiv")
+                html.Div([html.Div("Y-direction:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="loaddirY",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'}),id='loaddirYdiv',style={'display': 'inline-block'}),html.Div("N",style={'display': 'inline-block'})])
                 ],style={'width':'350px','display': 'inline-block'}))
             matrix2.append(html.Div([
                 html.Div(html.B("Supports: ")),
@@ -258,12 +262,12 @@ def display_hover_data(hoverData):
 @app.callback(Output('nodeXdiv', 'children'),
     [Input('FEM-Plot', 'clickData')])
 def update_x_input(clickData):
-    return [html.Div("X:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="nodeX",type='number',value=clickData["points"][0]["x"],style={'text-align': 'right','width':'150px'}),style={'display': 'inline-block'})]
+    return dcc.Input(id="nodeX",type='number',value=clickData["points"][0]["x"],style={'text-align': 'right','width':'150px'})
 
 @app.callback(Output('nodeYdiv', 'children'),
     [Input('FEM-Plot', 'clickData')])
 def update_x_input(clickData):
-    return [html.Div("Y:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="nodeY",type='number',value=clickData["points"][0]["y"],style={'text-align': 'right','width':'150px'}),style={'display': 'inline-block'})]
+    return dcc.Input(id="nodeY",type='number',value=clickData["points"][0]["y"],style={'text-align': 'right','width':'150px'})
 
 @app.callback(Output('loaddirXdiv', 'children'),
     [Input('FEM-Plot', 'clickData')],
@@ -277,9 +281,9 @@ def update_x_input(clickData,jsonStr,jsonStr_new):
     nodedof=float(clickData["points"][0]["pointNumber"]*3)
     if nodedof in loads[0]:
         size=loads[1][loads[0].tolist().index(nodedof)]
-        return [html.Div("X-direction:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="loaddirX",type='number',value=size,style={'text-align': 'right', 'width':'150px'}),style={'display': 'inline-block'}),html.Div("N",style={'display': 'inline-block'})]
+        return dcc.Input(id="loaddirX",type='number',value=size,style={'text-align': 'right', 'width':'150px'})
     else:
-        return [html.Div("X-direction:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="loaddirX",type='number',value=0,style={'text-align': 'right', 'width':'150px'}),style={'display': 'inline-block'}),html.Div("N",style={'display': 'inline-block'})]
+        return dcc.Input(id="loaddirX",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'})
 
 @app.callback(Output('loaddirYdiv', 'children'),
     [Input('FEM-Plot', 'clickData')],
@@ -293,9 +297,9 @@ def update_x_input(clickData,jsonStr,jsonStr_new):
     nodedof=float(clickData["points"][0]["pointNumber"]*3+1)
     if nodedof in loads[0]:
         size=loads[1][loads[0].tolist().index(nodedof)]
-        return [html.Div("Y-direction:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="loaddirY",type='number',value=size,style={'text-align': 'right', 'width':'150px'}),style={'display': 'inline-block'}),html.Div("N",style={'display': 'inline-block'})]
+        return dcc.Input(id="loaddirY",type='number',value=size,style={'text-align': 'right', 'width':'150px'})
     else:
-        return [html.Div("Y-direction:",style={'width': '100px', 'display': 'inline-block'}),html.Div(dcc.Input(id="loaddirY",type='number',value=0,style={'text-align': 'right', 'width':'150px'}),style={'display': 'inline-block'}),html.Div("N",style={'display': 'inline-block'})]
+        return dcc.Input(id="loaddirY",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'})
 
 @app.callback(Output('supportsDiv', 'children'),
     [Input('FEM-Plot', 'clickData')],
