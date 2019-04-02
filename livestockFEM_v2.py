@@ -12,7 +12,7 @@ np.set_printoptions(linewidth=200)
 
 class FEM_frame:
 
-    def __init__(self,inDict,respath=r"result_file.json"):
+    def __init__(self,inDict):
         self.outDict={}
         self.outDict["ElementStiffnessSmall"]=[]
         self.outDict["ElementStiffnessSmallLocal"]=[]
@@ -59,8 +59,6 @@ class FEM_frame:
         previewHinge(self)
         previewNodeload(self)
         previewElementload(self)
-
-        self.createJSON(respath)
 
     def sysStiff(self):
         K = np.zeros((np.max(self.D)+1,np.max(self.D)+1))
@@ -249,10 +247,7 @@ class FEM_frame:
             for i in range(len(Xp)):
                 self.outDict["ForcePlot"+str(s)][el].append([round(Xp[i],rou),round(Yp[i],rou),0.0])
 
-    def createJSON(self,output_file):
-        dictstr=str(self.outDict).replace("'",'"').replace(', "',',\n "').replace("{","{\n ").replace("}","\n}")
-        with open(output_file,"w") as file:
-            file.write(dictstr)
+
 
 if __name__ == "__main__":
     with open(sys.argv[1]) as jsonfile:
@@ -261,4 +256,7 @@ if __name__ == "__main__":
         resPath = sys.argv[1].replace("input_file.json","result_file.json")
     else:
         resPath = sys.argv[1].replace(".json","result_file.json")
-    FEM=FEM_frame(jsonDict,resPath)
+    FEM=FEM_frame(jsonDict)
+    dictstr=json.dumps(FEM.outDict).replace(', "',',\n "').replace("{","{\n ").replace("}","\n}")
+    with open(resPath,"w") as file:
+        file.write(dictstr)

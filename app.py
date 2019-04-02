@@ -17,6 +17,7 @@ from parseDict import plotDict
 from datetime import datetime, date
 from livestockFEM_v2 import FEM_frame
 from html_divs import *
+from six.moves.urllib.parse import quote
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -26,14 +27,12 @@ app = dash.Dash(name=__name__, server=server, external_stylesheets=external_styl
 app.config.supress_callback_exceptions = True
 app.title = 'LivestockFEM'
 
-
 np.set_printoptions(threshold=sys.maxsize,linewidth=sys.maxsize)
 
 # Help Functions ---------------------------------------------------------------
 
 def matrixToHtml(matlist,hoverData,dofs,element=True,system=True):
     htmlList=[]
-
     try:
         if element:
             matlist = matlist[hoverData["points"][0]["customdata"]]
@@ -74,11 +73,11 @@ app.layout = html.Div(children=[
     html.Div([
         html.H1('LivestockFEM', style={'display': 'inline-block', 'margin-bottom':'0px','vertical-align': 'middle','padding-bottom':'0px'}),
         html.H6('A simple FEM calculation tool.', style={'display': 'inline-block', 'margin-bottom':'0px', 'margin-left':'8px','vertical-align': 'middle','padding':'0px'}),
-        html.Div(children=[
-        dragndrop('upload-data', 'Drag and Drop or ', 'Select Input File'),
+        html.Div([
+            dragndrop('Drag and Drop or ', 'Select Input File'),
+            html.Div("",id='download-link-div',style={ 'width':'250px','display': 'inline-block','text-align':'center'}),
         ],style={'display': 'inline-block', 'margin-bottom':'0px', 'margin-left':'8px','vertical-align': 'middle','padding-bottom':'0px'})
     ],style={'margin':'0px','padding':'0px'}),
-
     html.Div(id='checkboxes', style={'padding': 5,'margin-bottom':'0px','margin-top':'0px'}),
     html.Div(id='thePlot'),
     html.Div([html.Div(id='tabDiv', children=[])])
@@ -115,6 +114,33 @@ def update_output(list_of_contents, name, modif):
         return html.Div([html.I("'"+name+"' "), ' last modified: ', html.I(str(datetime.fromtimestamp(modif)).split('.')[0]), ' is loaded. ', html.A('Load another input file?')])
     else:
         return html.Div(['Drag and Drop or ', html.A('Select Input File')])
+
+# Changes the text in the upload area when file is uploaded
+@app.callback(Output(component_id='download-link-div', component_property='children'),
+              [Input(component_id='upload-data', component_property='contents')],
+              [State('upload-data', 'filename'),
+               State('upload-data', 'last_modified')])
+def update_output(list_of_contents, name, modif):
+    if list_of_contents is not None:
+        name=name.replace('input_file','result_file')
+        if not 'result_file' in name:
+            name=name.replace(".json","")+"_result_file.json"
+        child=html.Div(html.A('Download Result File',id='download-link',download=name,href="",target="_blank",
+            style={ 'width': '200px',
+                    'height': '60px',
+                    'lineHeight': '60px',
+                    'borderWidth': '1px',
+                    'borderStyle': 'dashed',
+                    'borderRadius': '10px',
+                    'textAlign': 'center',
+                    'margin': '0px',
+                    'display': 'inline-block',
+                    'overflow-y': 'auto',
+                    'white-space':'nowrap',
+                    'padding':'0px',
+                    'border-color':'black'}))
+        return child
+
 
 # Generates viewfilter when GloVar_json is updated
 @app.callback(Output(component_id='checkboxes', component_property='children'),
@@ -240,20 +266,20 @@ def display_click_data(clickData):
                 html.Div(html.B("Coordinates:")),
                 html.Div([
                     html.Div("X:",style={'width': '100px', 'display': 'inline-block'}),
-                    html.Div(dcc.Input(id="nodeX",type='number',value=clickData["points"][0]["x"],style={'text-align': 'right','width':'150px'}),id="nodeXdiv",style={'display': 'inline-block'})]),
+                    html.Div(dcc.Input(id="nodeX",type='number',value=None,style={'text-align': 'right','width':'150px'}),id="nodeXdiv",style={'display': 'inline-block'})]),
                 html.Div([
                     html.Div("Y:",style={'width': '100px', 'display': 'inline-block'}),
-                    html.Div(dcc.Input(id="nodeY",type='number',value=clickData["points"][0]["y"],style={'text-align': 'right','width':'150px'}),id="nodeYdiv",style={'display': 'inline-block'})])
+                    html.Div(dcc.Input(id="nodeY",type='number',value=None,style={'text-align': 'right','width':'150px'}),id="nodeYdiv",style={'display': 'inline-block'})])
                 ],style={'width':'350px','display': 'inline-block'}))
             nodeTab.append(html.Div([
                 html.Div(html.B("Loads: ")),
                 html.Div([
                     html.Div("X-direction:",style={'width': '100px', 'display': 'inline-block'}),
-                    html.Div(dcc.Input(id="loaddirX",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'}),id='loaddirXdiv',style={'display': 'inline-block'}),
+                    html.Div(dcc.Input(id="loaddirX",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id='loaddirXdiv',style={'display': 'inline-block'}),
                     html.Div("N",style={'display': 'inline-block'})]),
                 html.Div([
                     html.Div("Y-direction:",style={'width': '100px', 'display': 'inline-block'}),
-                    html.Div(dcc.Input(id="loaddirY",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'}),id='loaddirYdiv',style={'display': 'inline-block'}),
+                    html.Div(dcc.Input(id="loaddirY",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id='loaddirYdiv',style={'display': 'inline-block'}),
                     html.Div("N",style={'display': 'inline-block'})])
                 ],style={'width':'350px','display': 'inline-block'}))
             nodeTab.append(html.Div([
@@ -710,6 +736,30 @@ def update_output2(value,jsonStr):
     else:
         resDiv="Please wait for this to implemented"
     return resDiv
+
+# ----SAVE RESULTS FILE------------------------------------------------------------------------------------------------------------
+@app.callback(
+    dash.dependencies.Output('download-link', 'href'),
+    [
+    Input(component_id='defText', component_property='value'),
+    Input(component_id='forText', component_property='value'),
+    Input(component_id='GloVar_json_changed', component_property='children')
+    ],
+  [State(component_id='GloVar_json', component_property='children')])
+def update_download_link(defVal,forVal,jsonStr_new, jsonStr):
+    if len(jsonStr_new)==2:
+        jsonStr=jsonStr_new
+    if jsonStr is not None:
+        jsonDict = json.loads(jsonStr[0])
+        resultDict = json.loads(jsonStr[1])
+        if not (jsonDict['PlotScalingDeformation'] == defVal and jsonDict['PlotScalingForces'] == forVal):
+            jsonDict['PlotScalingDeformation'] = defVal
+            jsonDict['PlotScalingForces'] = forVal
+            resultDict = FEM_frame(jsonDict).outDict
+
+    json_string = json.dumps(resultDict).replace(', "',',\n "').replace("{","{\n ").replace("}","\n}")
+    json_string = "data:text/json;charset=utf-8,%EF%BB%BF" + quote(json_string)
+    return json_string
 
 if __name__ == '__main__':
     app.run_server(debug=True)

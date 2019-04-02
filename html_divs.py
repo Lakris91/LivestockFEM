@@ -2,29 +2,27 @@ import dash_core_components as dcc
 import dash_html_components as html
 import math
 
-def dragndrop(idStr,text,linkText=''):
-    dd = dcc.Upload(
-            id=idStr,
-            children=html.Div(['\n','\n',text, html.A(linkText)]),
-            accept='.json',
-            style={
-                'width': '700px',
-                'height': '60px',
-                'lineHeight': '60px',
-                'borderWidth': '1px',
-                'borderStyle': 'dashed',
-                'borderRadius': '10px',
-                'textAlign': 'center',
-                'margin': '0px',
-                'display': 'inline-block',
-                'overflow-y': 'auto',
-                'white-space':'nowrap',
-                'padding':'0px'
-                #'overflow':'hidden'
-                #'resize': 'horizontal',
-                #'overflow': 'auto'
-            },
-        )
+def dragndrop(text,linkText=''):
+    dd = html.Div(
+            dcc.Upload(
+                id='upload-data',
+                children=['\n','\n',text, html.A(linkText)],
+                accept='.json',
+                style={
+                    'width': '700px',
+                    'height': '60px',
+                    'lineHeight': '60px',
+                    'borderWidth': '1px',
+                    'borderStyle': 'dashed',
+                    'borderRadius': '10px',
+                    'textAlign': 'center',
+                    'margin': '0px',
+                    'display': 'inline-block',
+                    'overflow-y': 'auto',
+                    'white-space':'nowrap',
+                    'padding':'0px'
+                },
+            ),style={'display': 'inline-block'})
     return dd
 
 def generateTabs():
@@ -65,7 +63,7 @@ def viewFilter(jsonDict):
                     labelStyle={'display': 'inline-block'},
                 )
                 ],
-                style={ 'width': '45%','display': 'inline-block','height':'60px','vertical-align': 'middle', 'padding':'1px'}
+                style={ 'width': '55%','display': 'inline-block','height':'60px','vertical-align': 'middle', 'padding':'1px'}
             ),
             html.Div(
                 [
@@ -84,9 +82,9 @@ def viewFilter(jsonDict):
             html.Div(
                 [
                 html.Div('Plot Size:',style={'display': 'inline-block','height':'30px'}),
-                html.Div(dcc.Slider(id='plotHeight', min=100, max=2000, value=350, step=50))
+                html.Div(dcc.Slider(id='plotHeight', min=50, max=1200, value=350, step=50))
                 ],
-                style={'display': 'inline-block','width': '20%','height':'60px','vertical-align': 'middle', 'padding':'1px', 'padding-left':'15px'},
+                style={'display': 'inline-block','width': '12%','height':'60px','vertical-align': 'middle', 'padding':'1px', 'padding-left':'15px'},
             )
         ],
     )
