@@ -1073,8 +1073,8 @@ def update_output2(value,jsonStr_new,jsonStr_ori):
             html.Tr([
                 html.Th("Element No:",style={'textAlign':'center'}),
                 html.Th("Max Displacement",style={'textAlign':'right'}),
-                html.Th("Start Point Displacement",style={'textAlign':'right'}),
-                html.Th("End Point Displacement",style={'textAlign':'right'}),
+                html.Th("Start Node Displacement",style={'textAlign':'right'}),
+                html.Th("End Node Displacement",style={'textAlign':'right'}),
             ],style={'padding': '0px'})]
 
         for i, maxd in enumerate(maxDisp):
@@ -1105,8 +1105,8 @@ def update_output2(value,jsonStr_new,jsonStr_ori):
             html.Tr([
                 html.Th("Element No:",style={'textAlign':'center'}),
                 html.Th("Max Absolute "+dict[value][0],style={'textAlign':'right'}),
-                html.Th("Start Point "+dict[value][0],style={'textAlign':'right'}),
-                html.Th("End Point "+dict[value][0],style={'textAlign':'right'}),
+                html.Th("Start Node "+dict[value][0],style={'textAlign':'right'}),
+                html.Th("End Node "+dict[value][0],style={'textAlign':'right'}),
             ],style={'padding': '0px'})]
 
         forces=np.array(resJson[value])
