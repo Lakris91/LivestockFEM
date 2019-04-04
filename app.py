@@ -1025,6 +1025,7 @@ def update_output2(value,jsonStr_new,jsonStr_ori):
 
     if value=='overview':
         maxDisp=np.max(np.array(resJson["DefDist"]))
+        maxDisp*=(1000/resJson["UnitScaling"])
 
         momArray=np.array(resJson["MomentForcesPt"])
         maxMoment = np.array([np.max(momArray),np.min(momArray)])[int(np.absolute(np.max(momArray))<np.absolute(np.min(momArray)))]
@@ -1034,7 +1035,7 @@ def update_output2(value,jsonStr_new,jsonStr_ori):
         maxShear = np.array([np.max(sheaArray),np.min(sheaArray)])[int(np.absolute(np.max(sheaArray))<np.absolute(np.min(sheaArray)))]
 
         resDiv = html.Div([
-            html.H3('Results overview:'),
+            html.H3('Results Overview:'),
             html.Table([
                 html.Tr([
                     html.Td("Max Displacement:"),
@@ -1063,17 +1064,17 @@ def update_output2(value,jsonStr_new,jsonStr_ori):
             html.Br(),
         ])
     elif value=='Displacements':
-        displ=np.array(resJson["DefDist"])[:,2]
-        maxDisp=np.max(displ,1)
-        stDisp=displ[0]
-        enDisp=displ[-1]
+        displ=np.array(resJson["DefDist"])[:,2]*(1000/resJson["UnitScaling"])
+        maxDisp=np.round(np.max(displ,1),3)
+        stDisp=np.round(displ[:,0],3)
+        enDisp=np.round(displ[:,-1],3)
 
         tableContent=[
             html.Tr([
                 html.Th("Element No:",style={'textAlign':'center'}),
-                html.Th("Max displacement",style={'textAlign':'right'}),
-                html.Th("Start displacement",style={'textAlign':'right'}),
-                html.Th("End displacement",style={'textAlign':'right'}),
+                html.Th("Max Displacement",style={'textAlign':'right'}),
+                html.Th("Start Point Displacement",style={'textAlign':'right'}),
+                html.Th("End Point Displacement",style={'textAlign':'right'}),
             ],style={'padding': '0px'})]
 
         for i, maxd in enumerate(maxDisp):
@@ -1086,7 +1087,7 @@ def update_output2(value,jsonStr_new,jsonStr_ori):
                 ],style={'padding': '0px'}))
 
         resDiv = html.Div([
-            html.H3('Displacements overview:'),
+            html.H3('Displacements Overview:'),
             html.Table(tableContent),
             html.Br(),
             html.Br(),
@@ -1104,8 +1105,8 @@ def update_output2(value,jsonStr_new,jsonStr_ori):
             html.Tr([
                 html.Th("Element No:",style={'textAlign':'center'}),
                 html.Th("Max Absolute "+dict[value][0],style={'textAlign':'right'}),
-                html.Th("Start "+dict[value][0],style={'textAlign':'right'}),
-                html.Th("End "+dict[value][0],style={'textAlign':'right'}),
+                html.Th("Start Point "+dict[value][0],style={'textAlign':'right'}),
+                html.Th("End Point "+dict[value][0],style={'textAlign':'right'}),
             ],style={'padding': '0px'})]
 
         forces=np.array(resJson[value])
@@ -1120,7 +1121,7 @@ def update_output2(value,jsonStr_new,jsonStr_ori):
                 ],style={'padding': '0px'}))
 
         resDiv = html.Div([
-            html.H3(dict[value][0]+'s overview:'),
+            html.H3(dict[value][0]+'s Overview:'),
             html.Table(tableContent),
             html.Br(),
             html.Br(),
