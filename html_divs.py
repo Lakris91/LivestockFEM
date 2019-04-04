@@ -131,6 +131,9 @@ def tab5():
 
 def tab6():
     tabDiv=html.Div([
+        html.Br(),
+        html.Div(id="resExplain"),
+        html.Br(),
         dcc.Dropdown(
             id='result-dropdown',
             options=[

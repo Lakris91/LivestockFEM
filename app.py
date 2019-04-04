@@ -194,63 +194,6 @@ def render_content(tab):
     else:
         return tab6()
 
-# ----MATRIX TAB-------------------------------------------------------------------------------------------------------------
-
-@app.callback(Output('hover-data-matrix', 'children'),
-    [Input('FEM-Plot', 'hoverData')],
-    [State('GloVar_json', 'children')])
-def display_hover_data(hoverData,jsonStr):
-    resJson=json.loads(jsonStr[1])
-    try:
-        matrix2=[]
-        elementNo=hoverData["points"][0]["customdata"]
-        dofs=resJson["ElementStiffnessSmall"][elementNo][0][1:]
-        matrix2.append(html.P("Current Element: "+ str(elementNo) + "\n"))
-        matrix2.append(html.P("Element Degrees of Freedom: " + " ".join([str(int(dof)) for dof in dofs]) + "\n"))
-        matrix2.append(html.Details([html.Summary('View explanation (Degrees of Freedom)'), html.Div([
-            html.Div("Each element has 6 degrees of freedom, 3 at each node, movement in the X-direction and the Y-direction along with clockwise rotation around the node. If two elements share a degree of freedom they will not be able to move or rotate independendant of each other."),
-            html.Img(src=app.get_asset_url('dof_nohinge_alpha.png')),
-            html.Div("If a hinge is added then an additional rotational degree of freedom is added to the node, this means the elements can rotate independant of each other around the node."),
-            html.Img(src=app.get_asset_url('dof_yeshinge_alpha.png')),
-            ])],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
-        matrix2.append(html.Br())
-        matrix2.append(html.B("Element Stiffness Matrix:"))
-        matrix2.append(html.P("Each row and column represents its Degree of Freedom (DOF), in local coordinate system."))
-        matrix2.append(html.Pre(matrixToHtml(resJson["ElementStiffnessSmallLocal"],hoverData,dofs,True,False)))
-        matrix2.append(html.P("Transformed to global coordinate system:"))
-        matrix2.append(html.Pre(matrixToHtml(resJson["ElementStiffnessSmall"],hoverData,dofs,True,False)))
-        matrix2.append(html.Details([html.Summary('View explanation (Element Stiffness Matrix)'), html.Div([
-            html.Div("An element stiffness matrix for the local coordinate system, k_local, can be put up column- and rowvise by setting a node displacement = 1 and the rest of node displacements = 0, as shown in the two examples below."),
-            html.Img(src=app.get_asset_url('elestiff_ex.png'),style={'width':'40%'}),
-            html.Div("The results from the figure above can then be set up in the local element stiffness matrix. "),
-            html.Img(src=app.get_asset_url('elestiff_mat.png'),style={'width':'30%'}),
-            html.Div("The local stiffness matrix is then transformed to global coordinate system, k, as shown below.\nThe transformation vector A is defined from the normalized (vector where the length equals 1) direction vector of the element, n, the direction vector is found by subtracting the first node from the second, and normalized by dividing it by lenght of the vector."),
-            html.Img(src=app.get_asset_url('transform_mat.png'),style={'width':'15%'}),
-            ])],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
-        matrix2.append(html.Br())
-        matrix2.append(html.B("Element Stiffness Matrix Expanded:"))
-        matrix2.append(html.P("The Element Stiffness Matrix is expanded to the size of the System Stiffness Matrix based on the degrees of freedom."))
-        matrix2.append(html.Details([html.Summary('View Expanded Element Stiffness Matrix'), html.Pre(matrixToHtml(resJson["ElementStiffnessExpanded"],hoverData,dofs,True,True))],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
-        matrix2.append(html.Details([html.Summary('View explanation (Expanded Element Stiffness Matrix)'), html.Div([
-            html.Div("The element stiffness matrix is expanded to the size of the system stiffness matrix, which have size N x N where N is the total of amount degrees of freedom in the system times.\nIn the unexpanded element stiffness matrix each row and column represents a degree of freedom, each cell of the matrix is insert in the expanded matrix based on the degree of freedom. \nThis expansion can be seen in example below, please note the example only contains 4 degrees of freedom per element, but principle is the same."),
-            html.Img(src=app.get_asset_url('expan_ex_1.png')),
-            html.Div("Looking at element 2, this element has the degrees of freedom: 1,2,5 and 6, there is 6 degrees of freedom in the system, this means the rows 3 and 4 along with columns 3 and 4 will be left empty (filled with 0) in the expanded matrix."),
-            html.Img(src=app.get_asset_url('expan_ex_2.png')),
-            ])],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
-        matrix2.append(html.Br())
-        matrix2.append(html.B("System Stiffness Matrix:"))
-        matrix2.append(html.P("Adding the expanded Element Stiffness Matrixes together forms the System Stiffness Matrix."))
-        matrix2.append(html.Details([html.Summary('View System Stiffness Matrix'), html.Pre(matrixToHtml(resJson["SystemStiffness"],hoverData,dofs,False,True))],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
-        matrix2.append(html.Details([html.Summary('View explanation (Expanded System Stiffness Matrix)'), html.Div([
-            html.Div("The system stiffness matrix, are simply the sum of all the expanded element stiffness matrix. This can be illustrated with the previous example."),
-            html.Img(src=app.get_asset_url('expan_ex_1.png')),
-            html.Img(src=app.get_asset_url('expan_ex_3.png')),
-            ])],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
-        matrix2.append(html.Pre("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"))
-    except:
-        matrix2 = ""
-    return matrix2
-
 # ----NODES TAB-------------------------------------------------------------------------------------------------------------
 
 @app.callback(Output('click-data-nodes', 'children'),
@@ -676,6 +619,7 @@ def update_output(n_clicks,elenumber,stNo,enNo,eleXdir,eleYdir,localglobal,sarea
     return [json.dumps(inJson)]
 
 # ----UPDATE DICTIONARY-------------------------------------------------------------------------------------------------------------
+
 @app.callback(Output(component_id='GloVar_json_changed', component_property='children'),
                 [
                 Input(component_id='nodes_changed', component_property='children'),
@@ -707,48 +651,6 @@ def update_dict(nodes_changed,elements_changed,jsonStr_ori,jsonStr_new):
 
     resultDict = FEM_frame(inJson).outDict
     return json.dumps(inJson), json.dumps(resultDict)
-
-# ----RESULTS TAB-------------------------------------------------------------------------------------------------------------
-
-@app.callback(Output('results-div', 'children'),
-    [Input('result-dropdown', 'value'),
-    Input('GloVar_json', 'children')])
-def update_output2(value,jsonStr):
-    resJson=json.loads(jsonStr[1])
-
-    if value=='overview':
-        maxDisp=np.max(np.array(resJson["DefDist"]))
-        maxMoment=np.max(np.absolute(np.array(resJson["MomentForcesPt"])))
-        maxNormal=np.max(np.absolute(np.array(resJson["NormalForce1"])))
-        maxShear=np.max(np.absolute(np.array(resJson["ShearForce2"])))
-        resDiv = html.Div([
-            html.H3('Results overview:'),
-            html.Table([
-                html.Tr([
-                    html.Td("Max Displacement:"),
-                    html.Td(str(int(maxDisp)),style={'textAlign':'right'}),
-                    html.Td("mm")
-                ],style={'padding': '0px'}),
-                html.Tr([
-                    html.Td("Max Absolute Bending Moment:"),
-                    html.Td(str(int(maxMoment)),style={'textAlign':'right'}),
-                    html.Td("Nm")
-                ],style={'padding': '0px'}),
-                html.Tr([
-                    html.Td("Max Absolute Normal Forces:"),
-                    html.Td(str(int(maxNormal)),style={'textAlign':'right'}),
-                    html.Td("N/m2")
-                ],style={'padding': '0px'}),
-                html.Tr([
-                    html.Td("Max Absolute Shear Forces:"),
-                    html.Td(str(int(maxShear)),style={'textAlign':'right'}),
-                    html.Td("N/m2")
-                ],style={'padding': '0px'})
-            ])
-        ])
-    else:
-        resDiv="Please wait for this to implemented"
-    return resDiv
 
 # ----SUPPORTS TAB-------------------------------------------------------------------------------------------------------------
 
@@ -1048,7 +950,216 @@ def update_output2(jsonStr_new,jsonStr_ori):
     ])
     return tabDiv
 
+# ----MATRIX TAB-------------------------------------------------------------------------------------------------------------
+
+@app.callback(Output('hover-data-matrix', 'children'),
+    [Input('FEM-Plot', 'hoverData')],
+    [State('GloVar_json', 'children')])
+def display_hover_data(hoverData,jsonStr):
+    resJson=json.loads(jsonStr[1])
+    try:
+        matrix2=[]
+        elementNo=hoverData["points"][0]["customdata"]
+        dofs=resJson["ElementStiffnessSmall"][elementNo][0][1:]
+        matrix2.append(html.P("Current Element: "+ str(elementNo) + "\n"))
+        matrix2.append(html.P("Element Degrees of Freedom: " + " ".join([str(int(dof)) for dof in dofs]) + "\n"))
+        matrix2.append(html.Details([html.Summary('View explanation (Degrees of Freedom)'), html.Div([
+            html.Div("Each element has 6 degrees of freedom, 3 at each node, movement in the X-direction and the Y-direction along with clockwise rotation around the node. If two elements share a degree of freedom they will not be able to move or rotate independendant of each other."),
+            html.Img(src=app.get_asset_url('dof_nohinge_alpha.png')),
+            html.Div("If a hinge is added then an additional rotational degree of freedom is added to the node, this means the elements can rotate independant of each other around the node."),
+            html.Img(src=app.get_asset_url('dof_yeshinge_alpha.png')),
+            ])],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
+        matrix2.append(html.Br())
+        matrix2.append(html.B("Element Stiffness Matrix:"))
+        matrix2.append(html.P("Each row and column represents its Degree of Freedom (DOF), in local coordinate system."))
+        matrix2.append(html.Pre(matrixToHtml(resJson["ElementStiffnessSmallLocal"],hoverData,dofs,True,False)))
+        matrix2.append(html.P("Transformed to global coordinate system:"))
+        matrix2.append(html.Pre(matrixToHtml(resJson["ElementStiffnessSmall"],hoverData,dofs,True,False)))
+        matrix2.append(html.Details([html.Summary('View explanation (Element Stiffness Matrix)'), html.Div([
+            html.Div("An element stiffness matrix for the local coordinate system, k_local, can be put up column- and rowvise by setting a node displacement = 1 and the rest of node displacements = 0, as shown in the two examples below."),
+            html.Img(src=app.get_asset_url('elestiff_ex.png'),style={'width':'40%'}),
+            html.Div("The results from the figure above can then be set up in the local element stiffness matrix. "),
+            html.Img(src=app.get_asset_url('elestiff_mat.png'),style={'width':'30%'}),
+            html.Div("The local stiffness matrix is then transformed to global coordinate system, k, as shown below.\nThe transformation vector A is defined from the normalized (vector where the length equals 1) direction vector of the element, n, the direction vector is found by subtracting the first node from the second, and normalized by dividing it by lenght of the vector."),
+            html.Img(src=app.get_asset_url('transform_mat.png'),style={'width':'15%'}),
+            ])],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
+        matrix2.append(html.Br())
+        matrix2.append(html.B("Element Stiffness Matrix Expanded:"))
+        matrix2.append(html.P("The Element Stiffness Matrix is expanded to the size of the System Stiffness Matrix based on the degrees of freedom."))
+        matrix2.append(html.Details([html.Summary('View Expanded Element Stiffness Matrix'), html.Pre(matrixToHtml(resJson["ElementStiffnessExpanded"],hoverData,dofs,True,True))],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
+        matrix2.append(html.Details([html.Summary('View explanation (Expanded Element Stiffness Matrix)'), html.Div([
+            html.Div("The element stiffness matrix is expanded to the size of the system stiffness matrix, which have size N x N where N is the total of amount degrees of freedom in the system times.\nIn the unexpanded element stiffness matrix each row and column represents a degree of freedom, each cell of the matrix is insert in the expanded matrix based on the degree of freedom. \nThis expansion can be seen in example below, please note the example only contains 4 degrees of freedom per element, but principle is the same."),
+            html.Img(src=app.get_asset_url('expan_ex_1.png')),
+            html.Div("Looking at element 2, this element has the degrees of freedom: 1,2,5 and 6, there is 6 degrees of freedom in the system, this means the rows 3 and 4 along with columns 3 and 4 will be left empty (filled with 0) in the expanded matrix."),
+            html.Img(src=app.get_asset_url('expan_ex_2.png')),
+            ])],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
+        matrix2.append(html.Br())
+        matrix2.append(html.B("System Stiffness Matrix:"))
+        matrix2.append(html.P("Adding the expanded Element Stiffness Matrixes together forms the System Stiffness Matrix."))
+        matrix2.append(html.Details([html.Summary('View System Stiffness Matrix'), html.Pre(matrixToHtml(resJson["SystemStiffness"],hoverData,dofs,False,True))],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
+        matrix2.append(html.Details([html.Summary('View explanation (Expanded System Stiffness Matrix)'), html.Div([
+            html.Div("The system stiffness matrix, are simply the sum of all the expanded element stiffness matrix. This can be illustrated with the previous example."),
+            html.Img(src=app.get_asset_url('expan_ex_1.png')),
+            html.Img(src=app.get_asset_url('expan_ex_3.png')),
+            ])],style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}))
+        matrix2.append(html.Pre("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"))
+    except:
+        matrix2 = ""
+    return matrix2
+
+# ----RESULTS TAB-------------------------------------------------------------------------------------------------------------
+
+@app.callback(Output('results-div', 'children'),
+    [Input('result-dropdown', 'value'),
+    Input('GloVar_json_changed', 'children')],
+    [State('GloVar_json', 'children')])
+def update_output2(value,jsonStr_new,jsonStr_ori):
+    if len(jsonStr_ori) == 0:
+        return []
+    if len(jsonStr_new) == 0:
+        inJson=json.loads(jsonStr_ori[0])
+        resJson=json.loads(jsonStr_ori[1])
+    else:
+        inJson=json.loads(jsonStr_new[0])
+        resJson=json.loads(jsonStr_new[1])
+
+    if value=='overview':
+        maxDisp=np.max(np.array(resJson["DefDist"]))
+
+        momArray=np.array(resJson["MomentForcesPt"])
+        maxMoment = np.array([np.max(momArray),np.min(momArray)])[int(np.absolute(np.max(momArray))<np.absolute(np.min(momArray)))]
+        normArray=np.array(resJson["NormalForce1"])
+        maxNormal = np.array([np.max(normArray),np.min(normArray)])[int(np.absolute(np.max(normArray))<np.absolute(np.min(normArray)))]
+        sheaArray=np.array(resJson["ShearForce2"])
+        maxShear = np.array([np.max(sheaArray),np.min(sheaArray)])[int(np.absolute(np.max(sheaArray))<np.absolute(np.min(sheaArray)))]
+
+        resDiv = html.Div([
+            html.H3('Results overview:'),
+            html.Table([
+                html.Tr([
+                    html.Td("Max Displacement:"),
+                    html.Td(str(int(round(maxDisp))),style={'textAlign':'right'}),
+                    html.Td("mm")
+                ],style={'padding': '0px'}),
+                html.Tr([
+                    html.Td("Max Absolute Bending Moment:"),
+                    html.Td(str(int(round(maxMoment))),style={'textAlign':'right'}),
+                    html.Td("Nm")
+                ],style={'padding': '0px'}),
+                html.Tr([
+                    html.Td("Max Absolute Normal Forces:"),
+                    html.Td(str(int(round(maxNormal))),style={'textAlign':'right'}),
+                    html.Td("N/m2")
+                ],style={'padding': '0px'}),
+                html.Tr([
+                    html.Td("Max Absolute Shear Forces:"),
+                    html.Td(str(int(round(maxShear))),style={'textAlign':'right'}),
+                    html.Td("N/m2")
+                ],style={'padding': '0px'})
+            ]),
+            html.Br(),
+            html.Br(),
+            html.Br(),
+            html.Br(),
+        ])
+    elif value=='Displacements':
+        displ=np.array(resJson["DefDist"])[:,2]
+        maxDisp=np.max(displ,1)
+        stDisp=displ[0]
+        enDisp=displ[-1]
+
+        tableContent=[
+            html.Tr([
+                html.Th("Element No:",style={'textAlign':'center'}),
+                html.Th("Max displacement",style={'textAlign':'right'}),
+                html.Th("Start displacement",style={'textAlign':'right'}),
+                html.Th("End displacement",style={'textAlign':'right'}),
+            ],style={'padding': '0px'})]
+
+        for i, maxd in enumerate(maxDisp):
+            tableContent.append(
+                html.Tr([
+                    html.Td(i,style={'textAlign':'center'}),
+                    html.Td(str(maxd)+" mm",style={'textAlign':'right'}),
+                    html.Td(str(stDisp[i])+" mm",style={'textAlign':'right'}),
+                    html.Td(str(enDisp[i])+" mm",style={'textAlign':'right'}),
+                ],style={'padding': '0px'}))
+
+        resDiv = html.Div([
+            html.H3('Displacements overview:'),
+            html.Table(tableContent),
+            html.Br(),
+            html.Br(),
+            html.Br(),
+            html.Br(),
+        ])
+    else:
+        dict=   {
+                'MomentForcesPt':['Bending Moment',' Nm'],
+                'NormalForce1':['Normal Force',' N'],
+                'ShearForce2':['Shear Force',' N']
+                }
+
+        tableContent=[
+            html.Tr([
+                html.Th("Element No:",style={'textAlign':'center'}),
+                html.Th("Max Absolute "+dict[value][0],style={'textAlign':'right'}),
+                html.Th("Start "+dict[value][0],style={'textAlign':'right'}),
+                html.Th("End "+dict[value][0],style={'textAlign':'right'}),
+            ],style={'padding': '0px'})]
+
+        forces=np.array(resJson[value])
+        for i,force in enumerate(forces):
+            absmax=force[np.absolute(force).tolist().index(np.max(np.absolute(force)))]
+            tableContent.append(
+                html.Tr([
+                    html.Td(i,style={'textAlign':'center'}),
+                    html.Td(str(int(absmax))    +dict[value][1],style={'textAlign':'right'}),
+                    html.Td(str(int(force[0]))      +dict[value][1],style={'textAlign':'right'}),
+                    html.Td(str(int(force[-1]))     +dict[value][1],style={'textAlign':'right'}),
+                ],style={'padding': '0px'}))
+
+        resDiv = html.Div([
+            html.H3(dict[value][0]+'s overview:'),
+            html.Table(tableContent),
+            html.Br(),
+            html.Br(),
+            html.Br(),
+            html.Br(),
+        ])
+    return resDiv
+
+@app.callback(Output('resExplain', 'children'),
+    [Input('GloVar_json_changed', 'children')],
+    [State('GloVar_json', 'children')])
+def update_output2(jsonStr_new,jsonStr_ori):
+    if len(jsonStr_ori) == 0:
+        return []
+    if len(jsonStr_new) == 0:
+        inJson=json.loads(jsonStr_ori[0])
+        resJson=json.loads(jsonStr_ori[1])
+    else:
+        inJson=json.loads(jsonStr_new[0])
+        resJson=json.loads(jsonStr_new[1])
+
+    resExplain=[html.Details([
+        html.Summary('View explanation (Section forces calculations)'),
+        html.Div([
+            html.Div(html.Img(src=app.get_asset_url('beam_element.png'),style={'width':'800px'})),
+            html.P("""Looking at the beam element in it local coordinate system, as seen above. We get the section forces, Normal forces, Shear forces and Bending moments, by finding rl,
+            rl is found by taking the dot product of the local element stiffness matrix (see explanation in the Matrix tab) and the local node displacement vl (see explanation in the Supports tab).
+            """,style={'width':'90%'}),
+            html.Div(html.Img(src=app.get_asset_url('section_forces.png'),style={'width':'800px'})),
+            html.P("""Looking at the first element in the example below, we get the following:
+            """,style={'width':'90%'}),
+            html.Div(html.Img(src=app.get_asset_url('dof_nohinge_alpha.png'),style={'width':'800px'})),
+            html.Div(html.Img(src=app.get_asset_url('section_results.png'),style={'width':'800px'})),
+        ])],
+        style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'})]
+    return resExplain
+
 # ----SAVE RESULTS FILE------------------------------------------------------------------------------------------------------------
+
 @app.callback(
     dash.dependencies.Output('download-link', 'href'),
     [

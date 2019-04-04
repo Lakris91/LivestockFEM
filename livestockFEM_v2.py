@@ -142,7 +142,7 @@ class FEM_frame:
         F1=np.zeros((len(self.T),2))
         F2=np.zeros((len(self.T),2))
         M=np.zeros((len(self.T),2))
-
+        i=0
         for el in range(len(self.T)):
             X1 = self.X[self.T[el][0]]
             X2 = self.X[self.T[el][1]]
