@@ -128,7 +128,11 @@ class FEM_frame:
         Vu=V[du]
         Rf=self.R[df]
         #Vf = np.linalg.solve(Kff,(Rf-Kfu @ Vu))
-        Vf = np.linalg.inv(Kff) @ Rf
+        #print(Kff)
+        try:
+            Vf = np.linalg.inv(Kff) @ Rf
+        except:
+            Vf = np.linalg.pinv(Kff) @ Rf
         Ru = Kfu.T @ Vf
         V[df]=Vf
         V[du]=Vu
