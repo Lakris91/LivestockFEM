@@ -33,7 +33,7 @@ class FEM_frame:
         self.K = self.sysStiff()
         self.R = self.loadVec()
 
-        self.V,self.Ru = self.calcDispReac()
+        self.V,self.Re = self.calcDispReac()
         self.F1,self.F2,self.M = self.calcForces()
 
         topo=[]
@@ -41,14 +41,14 @@ class FEM_frame:
             topo.append((self.X[ele]*self.plotScale).tolist())
         self.outDict["Topology"]=topo
         self.outDict["Displacements"]=self.V.T.tolist()[0]
-        self.outDict["Reactions"]=self.Ru.T.tolist()[0]
+        self.outDict["Reactions"]=self.Re.T.tolist()[0]
         self.outDict["NormalForce1"]=self.F1.tolist()
         self.outDict["ShearForce2"]=self.F2.tolist()
         self.outDict["Moment3"]=self.M.tolist()
         self.outDict["UnitScaling"]=self.plotScale
         self.outDict["Nodes"]=self.X.tolist()
         self.outDict["PlotDivisions"]=self.nrp
-        self.outDict["DeformTooLarge"]=int(any(self.V>1) or any(self.V<-1))
+        self.outDict["DeformTooLarge"]=int(any(self.V>10) or any(self.V<-10))
 
         self.exportDispPlot()
         self.exportForcePlot(1)
@@ -127,13 +127,15 @@ class FEM_frame:
         V=np.zeros((np.max(self.D)+1,1))
         Vu=V[du]
         Rf=self.R[df]
-        Vf = np.linalg.solve(Kff,(Rf-Kfu @ Vu))
-        Ru = Kfu.T @ Vf + Kuu @ Vu
+        #Vf = np.linalg.solve(Kff,(Rf-Kfu @ Vu))
+        Vf = np.linalg.inv(Kff) @ Rf
+        Ru = Kfu.T @ Vf
         V[df]=Vf
         V[du]=Vu
+        Re=Ru-self.R[du]
         V = np.around(V,6)
-        Ru = np.around(Ru,0)
-        return V,Ru
+        Re = np.around(Re,0)
+        return V,Re
 
     def calcForces(self):
         #Calculate forces

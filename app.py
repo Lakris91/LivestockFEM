@@ -399,6 +399,9 @@ def update_output(n_clicks,nodenumber,nodeX,nodeY,loaddirX,loaddirY,supportCheck
     elif nodeInt*3+1 in loaddoflist:
         inJson['PyNodeLoad'][loaddoflist.index(nodeInt*3+1)]=[nodeInt*3+1,float(loaddirY)]
 
+    if len(inJson['PyNodeLoad'])==0:
+        inJson['PyNodeLoad']=[[0,0.0]]
+
     if nodeInt*3 not in inJson['PySupport'] and 'X' in supportCheck:
         inJson['PySupport'].append(nodeInt*3)
     elif nodeInt*3 in inJson['PySupport'] and 'X' not in supportCheck:
@@ -498,9 +501,10 @@ def update_x_input(clickData,jsonStr,jsonStr_new):
     if len(jsonStr_new)==2:
         jsonStr=jsonStr_new
     inJson=json.loads(jsonStr[0])
-    elements=inJson["PyElements"]
-    eleNo=clickData["points"][0]["customdata"]
-    return dcc.Input(id="stNo",type='number',value=elements[eleNo][0],style={'text-align': 'right', 'width':'150px'})
+    if "customdata" in clickData["points"][0] and clickData["points"][0]["customdata"]!='isnode':
+        elements=inJson["PyElements"]
+        eleNo=clickData["points"][0]["customdata"]
+        return dcc.Input(id="stNo",type='number',value=elements[eleNo][0],style={'text-align': 'right', 'width':'150px'})
 
 @app.callback(Output('eleEnd', 'children'),
     [Input('FEM-Plot', 'clickData')],
@@ -510,9 +514,10 @@ def update_x_input(clickData,jsonStr,jsonStr_new):
     if len(jsonStr_new)==2:
         jsonStr=jsonStr_new
     inJson=json.loads(jsonStr[0])
-    elements=inJson["PyElements"]
-    eleNo=clickData["points"][0]["customdata"]
-    return dcc.Input(id="enNo",type='number',value=elements[eleNo][1],style={'text-align': 'right', 'width':'150px'})
+    if "customdata" in clickData["points"][0] and clickData["points"][0]["customdata"]!='isnode':
+        elements=inJson["PyElements"]
+        eleNo=clickData["points"][0]["customdata"]
+        return dcc.Input(id="enNo",type='number',value=elements[eleNo][1],style={'text-align': 'right', 'width':'150px'})
 
 @app.callback(Output('eleXdirdiv', 'children'),
     [Input('FEM-Plot', 'clickData'),
@@ -523,27 +528,28 @@ def update_x_input(clickData,localglobal,jsonStr,jsonStr_new):
     if len(jsonStr_new)==2:
         jsonStr=jsonStr_new
     inJson=json.loads(jsonStr[0])
-    elements=inJson["PyElements"]
-    eleNo=clickData["points"][0]["customdata"]
-    load=np.round(np.array(inJson['PyElementLoad']))[eleNo]
-    if localglobal=='global':
-        if load[0]==0.0 and load[1]==0.0:
-            return dcc.Input(id="eleXdir",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'})
-        nodes=np.array(inJson['PyNodes'])[elements[eleNo]]
-        v = nodes[1]-nodes[0]
-        if v[0]==0 and v[1]>0:
-            ang = math.pi/2
-        elif v[0]==0 and v[1]<0:
-            ang = -math.pi/2
+    if "customdata" in clickData["points"][0] and clickData["points"][0]["customdata"]!='isnode':
+        elements=inJson["PyElements"]
+        eleNo=clickData["points"][0]["customdata"]
+        load=np.round(np.array(inJson['PyElementLoad']))[eleNo]
+        if localglobal=='global':
+            if load[0]==0.0 and load[1]==0.0:
+                return dcc.Input(id="eleXdir",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'})
+            nodes=np.array(inJson['PyNodes'])[elements[eleNo]]
+            v = nodes[1]-nodes[0]
+            if v[0]==0 and v[1]>0:
+                ang = math.pi/2
+            elif v[0]==0 and v[1]<0:
+                ang = -math.pi/2
+            else:
+                ang = math.atan(v[1]/v[0])
+            x=load[0]
+            y=load[1]
+            load[0]=x*math.cos(ang)-y*math.sin(ang)
+            load[1]=x*math.sin(ang)+y*math.cos(ang)
+            return dcc.Input(id="eleXdir",type='number',value=round(load[0]),style={'text-align': 'right', 'width':'150px'})
         else:
-            ang = math.atan(v[1]/v[0])
-        x=load[0]
-        y=load[1]
-        load[0]=x*math.cos(ang)-y*math.sin(ang)
-        load[1]=x*math.sin(ang)+y*math.cos(ang)
-        return dcc.Input(id="eleXdir",type='number',value=round(load[0]),style={'text-align': 'right', 'width':'150px'})
-    else:
-        return dcc.Input(id="eleXdir",type='number',value=load[0],style={'text-align': 'right', 'width':'150px'})
+            return dcc.Input(id="eleXdir",type='number',value=load[0],style={'text-align': 'right', 'width':'150px'})
 
 @app.callback(Output('eleYdirdiv', 'children'),
     [Input('FEM-Plot', 'clickData'),
@@ -554,27 +560,28 @@ def update_x_input(clickData,localglobal,jsonStr,jsonStr_new):
     if len(jsonStr_new)==2:
         jsonStr=jsonStr_new
     inJson=json.loads(jsonStr[0])
-    elements=inJson["PyElements"]
-    eleNo=clickData["points"][0]["customdata"]
-    load=np.round(np.array(inJson['PyElementLoad']))[eleNo]
-    if localglobal=='global':
-        if load[0]==0.0 and load[1]==0.0:
-            return dcc.Input(id="eleXdir",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'})
-        nodes=np.array(inJson['PyNodes'])[elements[eleNo]]
-        v = nodes[1]-nodes[0]
-        if v[0]==0 and v[1]>0:
-            ang = math.pi/2
-        elif v[0]==0 and v[1]<0:
-            ang = -math.pi/2
+    if "customdata" in clickData["points"][0] and clickData["points"][0]["customdata"]!='isnode':
+        elements=inJson["PyElements"]
+        eleNo=clickData["points"][0]["customdata"]
+        load=np.round(np.array(inJson['PyElementLoad']))[eleNo]
+        if localglobal=='global':
+            if load[0]==0.0 and load[1]==0.0:
+                return dcc.Input(id="eleXdir",type='number',value=0.0,style={'text-align': 'right', 'width':'150px'})
+            nodes=np.array(inJson['PyNodes'])[elements[eleNo]]
+            v = nodes[1]-nodes[0]
+            if v[0]==0 and v[1]>0:
+                ang = math.pi/2
+            elif v[0]==0 and v[1]<0:
+                ang = -math.pi/2
+            else:
+                ang = math.atan(v[1]/v[0])
+            x=load[0]
+            y=load[1]
+            load[0]=x*math.cos(ang)-y*math.sin(ang)
+            load[1]=x*math.sin(ang)+y*math.cos(ang)
+            return dcc.Input(id="eleYdir",type='number',value=round(load[1]),style={'text-align': 'right', 'width':'150px'})
         else:
-            ang = math.atan(v[1]/v[0])
-        x=load[0]
-        y=load[1]
-        load[0]=x*math.cos(ang)-y*math.sin(ang)
-        load[1]=x*math.sin(ang)+y*math.cos(ang)
-        return dcc.Input(id="eleYdir",type='number',value=round(load[1]),style={'text-align': 'right', 'width':'150px'})
-    else:
-        return dcc.Input(id="eleYdir",type='number',value=load[1],style={'text-align': 'right', 'width':'150px'})
+            return dcc.Input(id="eleYdir",type='number',value=load[1],style={'text-align': 'right', 'width':'150px'})
 
 @app.callback(Output('areaDiv', 'children'),
     [Input('FEM-Plot', 'clickData')],
@@ -584,11 +591,12 @@ def update_x_input(clickData,jsonStr,jsonStr_new):
     if len(jsonStr_new)==2:
         jsonStr=jsonStr_new
     inJson=json.loads(jsonStr[0])
-    materials=inJson["PyMaterial"]
-    scale=inJson["UnitScaling"]
-    eleNo=clickData["points"][0]["customdata"]
-    mat=materials[eleNo][1]*(scale**2)
-    return dcc.Input(id="sarea",type='number',value=mat,style={'text-align': 'right', 'width':'150px'})
+    if "customdata" in clickData["points"][0] and clickData["points"][0]["customdata"]!='isnode':
+        materials=inJson["PyMaterial"]
+        scale=inJson["UnitScaling"]
+        eleNo=clickData["points"][0]["customdata"]
+        mat=materials[eleNo][1]*(scale**2)
+        return dcc.Input(id="sarea",type='number',value=mat,style={'text-align': 'right', 'width':'150px'})
 
 @app.callback(Output('inertiaDiv', 'children'),
     [Input('FEM-Plot', 'clickData')],
@@ -598,11 +606,12 @@ def update_x_input(clickData,jsonStr,jsonStr_new):
     if len(jsonStr_new)==2:
         jsonStr=jsonStr_new
     inJson=json.loads(jsonStr[0])
-    materials=inJson["PyMaterial"]
-    scale=inJson["UnitScaling"]
-    eleNo=clickData["points"][0]["customdata"]
-    mat=materials[eleNo][2]*(scale**4)
-    return dcc.Input(id="inert",type='number',value=mat,style={'text-align': 'right', 'width':'150px'})
+    if "customdata" in clickData["points"][0] and clickData["points"][0]["customdata"]!='isnode':
+        materials=inJson["PyMaterial"]
+        scale=inJson["UnitScaling"]
+        eleNo=clickData["points"][0]["customdata"]
+        mat=materials[eleNo][2]*(scale**4)
+        return dcc.Input(id="inert",type='number',value=mat,style={'text-align': 'right', 'width':'150px'})
 
 @app.callback(Output('emodulusDiv', 'children'),
     [Input('FEM-Plot', 'clickData')],
@@ -612,9 +621,10 @@ def update_x_input(clickData,jsonStr,jsonStr_new):
     if len(jsonStr_new)==2:
         jsonStr=jsonStr_new
     inJson=json.loads(jsonStr[0])
-    materials=inJson["PyMaterial"]
-    eleNo=clickData["points"][0]["customdata"]
-    return dcc.Input(id="emod",type='number',value=materials[eleNo][0],style={'text-align': 'right', 'width':'150px'})
+    if "customdata" in clickData["points"][0] and clickData["points"][0]["customdata"]!='isnode':
+        materials=inJson["PyMaterial"]
+        eleNo=clickData["points"][0]["customdata"]
+        return dcc.Input(id="emod",type='number',value=materials[eleNo][0],style={'text-align': 'right', 'width':'150px'})
 
 @app.callback(Output(component_id='elements_changed', component_property='children'),
                 [Input(component_id='applyelement', component_property='n_clicks')],
@@ -682,16 +692,19 @@ def update_dict(nodes_changed,elements_changed,jsonStr_ori,jsonStr_new):
         inJson=json.loads(jsonStr_ori[0])
     else:
         inJson=json.loads(jsonStr_new[0])
+
     if len(nodes_changed)==1:
         nodeDict=json.loads(nodes_changed[0])
         for key in nodeDict:
             if key in ['PyNodes','PyNodeLoad','PySupport']:
                 inJson[key]=nodeDict[key]
+
     if len(elements_changed)==1:
         elementDict=json.loads(elements_changed[0])
         for key in elementDict:
             if key in ['PyElements','PyElementLoad','PyMaterial']:
                 inJson[key]=elementDict[key]
+
     resultDict = FEM_frame(inJson).outDict
     return json.dumps(inJson), json.dumps(resultDict)
 
@@ -736,6 +749,304 @@ def update_output2(value,jsonStr):
     else:
         resDiv="Please wait for this to implemented"
     return resDiv
+
+# ----SUPPORTS TAB-------------------------------------------------------------------------------------------------------------
+
+@app.callback(Output('supportTab', 'children'),
+    [Input('GloVar_json_changed', 'children')],
+    [State('GloVar_json', 'children')])
+def update_output2(jsonStr_new,jsonStr_ori):
+    if len(jsonStr_ori) == 0:
+        return []
+    if len(jsonStr_new) == 0:
+        inJson=json.loads(jsonStr_ori[0])
+        resJson=json.loads(jsonStr_ori[1])
+    else:
+        inJson=json.loads(jsonStr_new[0])
+        resJson=json.loads(jsonStr_new[1])
+    tableContent=[html.Tr([
+                html.Th("Node No."),
+                html.Th("X-reaction"),
+                html.Th("Y-reaction"),
+                html.Th("Moment-reaction")])]
+    sumx=0
+    sumy=0
+    summ=0
+    for i,nod in enumerate(inJson['PyNodes']):
+        xrec=""
+        yrec=""
+        mrec=""
+        if i*3 in inJson['PySupport']:
+            reac=int(round(resJson['Reactions'][inJson['PySupport'].index(i*3)]))
+            sumx+=reac
+            xrec=str(reac)+" N"
+        if i*3+1 in inJson['PySupport']:
+            reac=int(round(resJson['Reactions'][inJson['PySupport'].index(i*3+1)]))
+            sumy+=reac
+            yrec=str(reac)+" N"
+        if i*3+2 in inJson['PySupport']:
+            reac=int(round(resJson['Reactions'][inJson['PySupport'].index(i*3+2)]))
+            summ+=reac
+            mrec=str(reac)+" Nm"
+        if xrec=="" and yrec=="" and mrec=="":
+            continue
+
+        tableContent.append(
+            html.Tr([
+                html.Td(i,style={'text-align':'center'}),
+                html.Td(xrec,style={'text-align':'right'}),
+                html.Td(yrec,style={'text-align':'right'}),
+                html.Td(mrec,style={'text-align':'right'}),
+            ]))
+    tableContent.append(
+        html.Tr([
+            html.Th("SUM",style={'text-align':'center'}),
+            html.Th(sumx,style={'text-align':'right'}),
+            html.Th(sumy,style={'text-align':'right'}),
+            html.Th(summ,style={'text-align':'right'}),
+        ]))
+
+    tabDiv = html.Div([
+        html.Details([
+            html.Summary('View explanation (Supports and Reactions forces)'),
+            html.Div([
+                html.Div("There are 4 types of supports: Fixed, Pinned, Roller and Simple."),
+                html.Div([
+                    html.B("Fixed:"),
+                    html.Br(),
+                    html.Img(src=app.get_asset_url('fixed.png')),
+                    html.Img(src=app.get_asset_url('fixed_reactions.png')),
+                    html.P("""Fixed supports, also called rigid or cantilevered support, supports the structure in both the X-direction, Y-direction and against rotation (moments).
+                    Making the structure unable to move up or down and side to side in the supported node, and prevents the structure from rotating around the node.\n
+                    To prevent the structure from moving and rotating in the node, the support counter acts (reacts) on the forces (loads) applied to the structure.
+                    Positive X-reactions means the structure would move left in the node if it was not supported. Positive Y-reactions means the structure will move downwards in the node if it was not supported.
+                    Positive Moment-reactions means the structure will rotate clockwise around the node if it was not supported. This means the sum of the reactions in the Y-direction
+                    for the entire system is equal to the sum of the loads in the Y-direction fot the system, the same is the case for reactions in the X-direction.\nExamples of real life fixed supports can be seen below.""",style={'width':'90%'}),
+                    html.Img(src=app.get_asset_url('fixed_examples.png'))
+                    ]),
+                html.Div([
+                    html.Br(),
+                    html.B("Pinned:"),
+                    html.Br(),
+                    html.Img(src=app.get_asset_url('pinned.png')),
+                    html.Img(src=app.get_asset_url('pinned_reactions.png')),
+                    html.P("""Pinned supports, supports the structure in both the X-direction and Y-direction but not against rotation (moments). Making the structure unable to move up or down and side to side in the supported node,
+                    but lets the structure rotate around the node.\nTo prevent the structure from moving, the suppport counter acts (reacts) on the forces (loads) applied to the structure.
+                    As with the fixed support positive X-reactions means the structure would move left in the node if it was not supported and positive Y-reactions means the structure will move downwards in the node if it was not supported. \n
+                    Examples of real life pinned supports can be seen below.""",style={'width':'90%'}),
+                    html.Img(src=app.get_asset_url('pinned_examples.png'))
+                    ]),
+                html.Div([
+                    html.Br(),
+                    html.B("Roller:"),
+                    html.Br(),
+                    html.Img(src=app.get_asset_url('roller.png')),
+                    html.Img(src=app.get_asset_url('roller_reactions.png')),
+                    html.P("""Roller supports, supports the structure in only one direction either the X-direction or the Y-direction and do not supports against rotation (moments).
+                    Making the structure unable to move either up or down or side to side in the supported node, but lets the structure rotate around the node.\n
+                    To prevent the structure from moving, the suppport counter acts (reacts) on the forces (loads) applied to the structure.
+                    As with the fixed support positive X-reactions means the structure would move left in the node if it was not supported and positive Y-reactions means the structure will move downwards in the node if it was not supported.
+                    Eventhough often illustrated as supports with wheels under it, it is rarely the case, instead it is mostly used for bridge bearings letting the move slightly back and forth to accomodate fluctuations and vibrations.\n
+                    Examples of real life pinned supports can be seen below.""",style={'width':'90%'}),
+                    html.Img(src=app.get_asset_url('roller_examples.png'))
+                    ]),
+                html.Div([
+                    html.Br(),
+                    html.B("Simple:"),
+                    html.Br(),
+                    html.Img(src=app.get_asset_url('simple.png')),
+                    html.Img(src=app.get_asset_url('simple_reactions.png')),
+                    html.P("""Simple support, rarely used, supports the structure in only one direction either the X-direction or the Y-direction and supports against rotation (moments).
+                    Making the structure unable to move either up or down or side to side in the supported node, prevents the structure from rotating around the node. \n
+                    As mentioned this is rarely used, the best example are unhinged shock absorber, hydraulic pumbs or elliptic springs like on a horse carriage, see example below, these makes the carriage only able to move up and down. """,style={'width':'90%'}),
+                    html.Img(src=app.get_asset_url('simple_examples.png'))
+                    ]),
+            ])],
+            style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}),
+        html.Br(),
+        html.Table(tableContent),
+        html.Br(),
+        html.Details([
+            html.Summary('View explanation (Reactions calculations)'),
+            html.Div([
+                html.Div(html.Img(src=app.get_asset_url('dof_nohinge_alpha.png'))),
+                html.P("""Looking at the example above, we got the system stiffness matrix K which can be seen below, to see how this is found go to the Matrix tab. \n
+                From the K matrix the Kff is found by removing the rows and columns corresponding to the supported degrees of freedom (DOF),
+                in this case node 1 and 4 are supported in X- and Y-direction, corresponding to DOF 1,2,10 and 11 these are therefore the rows and columns that are removed.\n
+                The matrix Kuf (marked with blue) is found by taking the rows of supported DOF, 1,2,10 and 11, and removing the columns corresponding to the support DOF.\n
+                We also have the load vector R which consist of the loads corresponding to the DOF, as we can see the only load in the system, is placed in DOF number 5, with the size P in the opposite direction of the DOF.
+                For elementloads the reactions are calculated for the single elements, the reactions are then added to the load vector. By removing the supported DOFS, 1,2,10 and 11, we get the vector Rf.\n
+                """,style={'width':'90%'}),
+                html.Div(html.Img(src=app.get_asset_url('k_matrix.png'),style={'width':'800px'})),
+                html.Div(html.Img(src=app.get_asset_url('kff_mat.png'),style={'width':'800px'})),
+                html.Div(html.Img(src=app.get_asset_url('kuf_mat.png'),style={'width':'750px'})),
+                html.Div(html.Img(src=app.get_asset_url('loadvec.png'),style={'width':'800px'})),
+                html.P("""To find the reactions we first need to calculate the displacement in all the unsupported nodes, Vf, this is done by taking the inverse matrix of Kff and dot it witf Rf as seen below.\n
+                The contribution from all the free DOFS to the reactions, Ru, is then found by taking the dot product of Kuf and Vf. To get the full reactions Ru are added together with discarded loads (the loads marked red) from the loadvector, R,
+                this is only needed if any loads are acting directly on the supported DOF, which is not the case in this example.
+                """,style={'width':'90%'}),
+                html.Div(html.Img(src=app.get_asset_url('dispreac_calc.png'),style={'width':'800px'})),
+            ])],
+            style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}),
+        html.Br(),
+        html.Br(),
+        html.Br(),
+        html.Br(),
+    ])
+    return tabDiv
+
+# ----LOADS TAB-------------------------------------------------------------------------------------------------------------
+
+@app.callback(Output('loadsTab', 'children'),
+    [Input('GloVar_json_changed', 'children')],
+    [State('GloVar_json', 'children')])
+def update_output2(jsonStr_new,jsonStr_ori):
+    if len(jsonStr_ori) == 0:
+        return []
+    if len(jsonStr_new) == 0:
+        inJson=json.loads(jsonStr_ori[0])
+        resJson=json.loads(jsonStr_ori[1])
+    else:
+        inJson=json.loads(jsonStr_new[0])
+        resJson=json.loads(jsonStr_new[1])
+    tableContent=[html.Tr([
+                html.Th("Node No.",style={'text-align':'center'}),
+                html.Th("X-load",style={'text-align':'right'}),
+                html.Th("Y-load",style={'text-align':'right'}),
+                html.Th("",style={'text-align':'right'}),
+                html.Th("",style={'text-align':'right'}),
+                html.Th("",style={'text-align':'right'}),
+                html.Th("",style={'text-align':'right'}),
+                html.Th("",style={'text-align':'right'}),
+                ])]
+    sumx=0
+    sumy=0
+    summ=0
+    ldof=(np.array(inJson['PyNodeLoad'])[:,0]).tolist()
+    lsize=(np.array(inJson['PyNodeLoad'])[:,1]).tolist()
+
+    for i,nod in enumerate(inJson['PyNodes']):
+        xload=""
+        yload=""
+        mload=""
+        if i*3 in ldof:
+            loadsize=int(round(inJson['PyNodeLoad'][ldof.index(i*3)][1]))
+            sumx+=loadsize
+            xload=str(loadsize)+" N"
+        if i*3+1 in ldof:
+            loadsize=int(round(inJson['PyNodeLoad'][ldof.index(i*3+1)][1]))
+            sumy+=loadsize
+            yload=str(loadsize)+" N"
+        if xload=="" and yload=="" and mload=="":
+            continue
+
+        tableContent.append(
+            html.Tr([
+                html.Td(i,style={'text-align':'center'}),
+                html.Td(xload,style={'text-align':'right'}),
+                html.Td(yload,style={'text-align':'right'}),
+                html.Td("",style={'text-align':'right'}),
+                html.Td("",style={'text-align':'right'}),
+                html.Td("",style={'text-align':'right'}),
+                html.Td("",style={'text-align':'right'}),
+                html.Td("",style={'text-align':'right'}),
+            ]))
+    tableContent.append(
+        html.Tr([
+            html.Th("SUM",style={'text-align':'center'}),
+            html.Th(str(sumx)+" N",style={'text-align':'right'}),
+            html.Th(str(sumy)+" N",style={'text-align':'right'}),
+            html.Th("",style={'text-align':'right'}),
+            html.Th("",style={'text-align':'right'}),
+            html.Th("",style={'text-align':'right'}),
+            html.Th("",style={'text-align':'right'}),
+            html.Th("",style={'text-align':'right'}),
+        ]))
+    tableContent.append(
+        html.Tr([
+            html.Th("Element No.",style={'text-align':'center'}),
+            html.Th("Global X-load*length",style={'text-align':'right'}),
+            html.Th("Global Y-load*length",style={'text-align':'right'}),
+            html.Th("Global X-load",style={'text-align':'right'}),
+            html.Th("Global Y-load",style={'text-align':'right'}),
+            html.Th("Local X-load",style={'text-align':'right'}),
+            html.Th("Local Y-load",style={'text-align':'right'}),
+            html.Th("Element Length",style={'text-align':'right'}),
+            ]))
+    sumxm=0
+    sumym=0
+    eleLoads=np.array(inJson['PyElementLoad'])
+    for i,ele in enumerate(inJson['PyElements']):
+        if np.linalg.norm(np.array(eleLoads)[i])==0.0:
+            continue
+        nodes=np.array(inJson['PyNodes'])[ele]
+        elelength=np.linalg.norm(nodes[1]-nodes[0])
+        load=eleLoads[i]
+        localx=int(round(eleLoads[i][0]))
+        localy=int(round(eleLoads[i][1]))
+
+        v = nodes[1]-nodes[0]
+        if v[0]==0 and v[1]>0:
+            ang = math.pi/2
+        elif v[0]==0 and v[1]<0:
+            ang = -math.pi/2
+        else:
+            ang = math.atan(v[1]/v[0])
+        x,y=load
+        load[0]=x*math.cos(ang)-y*math.sin(ang)
+        load[1]=x*math.sin(ang)+y*math.cos(ang)
+
+        globalx=int(round(load[0]))
+        globaly=int(round(load[1]))
+        globalxm=int(round(load[0]*elelength))
+        globalym=int(round(load[1]*elelength))
+
+        sumxm+=globalxm
+        sumym+=globalym
+
+        tableContent.append(
+            html.Tr([
+                html.Td(i,style={'text-align':'center'}),
+                html.Td("" if globalxm == 0 else str(globalxm)+" N",style={'text-align':'right'}),
+                html.Td("" if globalym == 0 else str(globalym)+" N",style={'text-align':'right'}),
+                html.Td("" if globalx == 0 else str(globalx)+" N/m",style={'text-align':'right'}),
+                html.Td("" if globaly == 0 else str(globaly)+" N/m",style={'text-align':'right'}),
+                html.Td("" if localx == 0 else str(localx)+" N/m",style={'text-align':'right'}),
+                html.Td("" if localy == 0 else str(localy)+" N/m",style={'text-align':'right'}),
+                html.Td(str(round(elelength,3))+" m",style={'text-align':'right'}),
+            ]))
+    tableContent.append(
+        html.Tr([
+            html.Th("SUM",style={'text-align':'center'}),
+            html.Th(str(sumxm)+" N",style={'text-align':'right'}),
+            html.Th(str(sumym)+" N",style={'text-align':'right'}),
+            html.Th("",style={'text-align':'right'}),
+            html.Th("",style={'text-align':'right'}),
+            html.Th("",style={'text-align':'right'}),
+            html.Th("",style={'text-align':'right'}),
+            html.Th("",style={'text-align':'right'}),
+        ]))
+    tableContent.append(
+        html.Tr([
+            html.Th("TOTAL SUM",style={'text-align':'center'}),
+            html.Th(str(sumxm+sumx)+" N",style={'text-align':'right'}),
+            html.Th(str(sumym+sumy)+" N",style={'text-align':'right'}),
+            html.Th("",style={'text-align':'right'}),
+            html.Th("",style={'text-align':'right'}),
+            html.Th("",style={'text-align':'right'}),
+            html.Th("",style={'text-align':'right'}),
+            html.Th("",style={'text-align':'right'}),
+        ]))
+
+    tabDiv = html.Div([
+        html.Br(),
+        html.Table(tableContent),
+        html.Br(),
+        html.Br(),
+        html.Br(),
+        html.Br(),
+    ])
+    return tabDiv
 
 # ----SAVE RESULTS FILE------------------------------------------------------------------------------------------------------------
 @app.callback(

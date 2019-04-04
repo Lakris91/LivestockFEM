@@ -33,16 +33,20 @@ def previewSupports(self):
     (0.04, -0.315), (0.025, -0.35), (0.04, -0.385), (0.075, -0.4), (0.11, -0.385), (0.125, -0.35), (0.11, -0.315), (0.075, -0.3),
     (-0.075, -0.3), (-0.11, -0.315), (-0.125, -0.35), (-0.11, -0.385), (-0.075, -0.4), (-0.04, -0.385), (-0.025, -0.35), (-0.04, -0.315),
     (-0.075, -0.3), (-0.15, -0.3), (-0.02, -0.04), (-0.035, -0.035), (-0.050, 0.0), (-0.035, 0.035)]
+    simple=[(0.15,-0.1),(0.15,0.0),(-0.15,0.0),(-0.15,-0.1),(-0.075,-0.1),(-0.11,-0.115),(-0.125,-0.15),(-0.11,-0.185),(-0.075,-0.2),(-0.15,-0.2),
+    (-0.15,-0.3),(0.15,-0.3),(0.15,-0.2),(0.075,-0.2),(-0.075,-0.2),(-0.04,-0.185),(-0.025,-0.15),(-0.04,-0.115),(-0.075,-0.1),(0.075,-0.1),(0.04,-0.115),
+    (0.025,-0.15),(0.04,-0.185),(0.075,-0.2),(0.11,-0.185),(0.125,-0.15),(0.11,-0.115),(0.075,-0.1),(0.15,-0.1)]
     fixed=[(x*self.plotScale,y*self.plotScale) for x,y in fixed]
     pinned=[(x*self.plotScale,y*self.plotScale) for x,y in pinned]
     roller=[(x*self.plotScale,y*self.plotScale) for x,y in roller]
+    simple=[(x*self.plotScale,y*self.plotScale) for x,y in simple]
     NodesCoord=[(x*self.plotScale,y*self.plotScale) for x,y in NodesCoord]
     sim=0.05*self.plotScale
     pllines=[]
     for i, no in enumerate(NodesCoord):
         x,y=no
         xbound = abs(x-bboxmaxX)>abs(x-bboxminX)
-        ybound = abs(y-bboxmaxY)>abs(y-bboxminY)
+        ybound = abs(y-bboxmaxY)>=abs(y-bboxminY)
         bound = [abs(y-bboxminY),abs(y-bboxmaxY),abs(x-bboxminX),abs(x-bboxmaxX)].index(min(abs(x-bboxmaxX),abs(x-bboxminX),abs(y-bboxmaxY),abs(y-bboxminY)))
         loco = Locks[i].count(True)
         if loco == 1:
@@ -68,14 +72,14 @@ def previewSupports(self):
                     pllines.append([[-ly+x,-lx+y] for lx,ly in pinned])
             elif Locks[i][0]==True and Locks[i][2]==True:
                 if xbound:
-                    pllines.append([[(ly-sim)+x,lx+y] for lx,ly in roller])
+                    pllines.append([[ly+x,lx+y] for lx,ly in simple])
                 else:
-                    pllines.append([[-(ly-sim)+x,lx+y] for lx,ly in roller])
+                    pllines.append([[-ly+x,lx+y] for lx,ly in simple])
             elif Locks[i][1]==True and Locks[i][2]==True:
                 if ybound:
-                    pllines.append([[lx+x,(ly-sim)+y] for lx,ly in roller])
+                    pllines.append([[lx+x,ly+y] for lx,ly in simple])
                 else:
-                    pllines.append([[lx+x,-(ly-sim)+y] for lx,ly in roller])
+                    pllines.append([[lx+x,-ly+y] for lx,ly in simple])
         elif loco == 3:
             if bound==0:
                 pllines.append([[lx+x,ly+y] for lx,ly in fixed])
@@ -240,7 +244,6 @@ def previewElementload(self):
             arrows[i][j][1]=x*math.sin(ang)+y*math.cos(ang)
 
     divPts0=array(divPts0)
-
     vecPts0=np.reshape(np.repeat(array(vecPts0), 9, axis=0),np.shape(divPts0))
     pllines0=[]
     for i,vec in enumerate(vecPts0):
@@ -251,8 +254,8 @@ def previewElementload(self):
             pllines[j].append((no+arrows[i][0]).tolist())
             pllines[j].append(no.tolist())
             pllines[j].append((no+arrows[i][1]).tolist())
-            pllines[j].append((no-(vec[i]*0.05)).tolist())
-            pllines[j].append((no-vec[i]).tolist())
+            pllines[j].append((no-(vec[j]*0.05)).tolist())
+            pllines[j].append((no-vec[j]).tolist())
         pllines.append([(((divPts0[i]-(vec*(sca/2)))-vec)[0]).tolist(),(((divPts0[i]-(vec*(sca/2)))-vec)[-1]).tolist()])
         pllines0.append(pllines)
     self.outDict["ElementloadViz"]=pllines0

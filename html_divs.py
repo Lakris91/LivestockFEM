@@ -106,30 +106,19 @@ def tab2():
 
 def tab3():
     tabDiv= html.Div([
-            html.H3('This is tab3')
+            html.B("List of supported nodes, and the reactions forces:"),
+            html.Div(html.I("(to change the supports please go to the Nodes-tab)")),
+            html.P("Reactions forces are the oppossing forces needed to keep the structure from moving/rotating in the supported node."),
+            html.Div(id='supportTab')
             ])
     return tabDiv
 
 def tab4():
     tabDiv= html.Div([
-                html.H3('This is tab6'),
-                html.Table([
-                    html.Tr([
-                        html.Th("Firstname"),
-                        html.Th(""),
-                        html.Th(""),
-                    ],style={'padding': '0px'}),
-                    html.Tr([
-                        html.Td("Jill"),
-                        html.Td("Amith"),
-                        html.Td("13"),
-                    ],style={'padding': '0px'}),
-                    html.Tr([
-                        html.Td("Jack"),
-                        html.Td("Lastname",style={'padding': '0px'}),
-                        html.Td("20",style={'padding': '0px'}),
-                    ])
-                ])
+            html.B("List of node loads and element loads in system:"),
+            html.Div(html.I("(to change the loads please go to the Nodes- or Elements-tab)")),
+            #html.P("Loads are in global coordinate system."),
+            html.Div(id='loadsTab')
             ])
     return tabDiv
 
