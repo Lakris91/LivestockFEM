@@ -178,7 +178,7 @@ def previewNodeload(self):
                 arrows[i][j][0]=x*math.cos(ang)-y*math.sin(ang)
                 arrows[i][j][1]=x*math.sin(ang)+y*math.cos(ang)
         pllines=[]
-        for i,no in enumerate((self.X[nodelist]*self.plotScale)-(array(vec)*(sca/2))):
+        for i,no in enumerate((self.X[nodelist]*self.plotScale)-(array(vec)*(sca/10))):
             pllines.append([])
             pllines[i].append((no+arrows[i][1]).tolist())
             pllines[i].append((no+arrows[i][0]).tolist())
@@ -248,7 +248,7 @@ def previewElementload(self):
     pllines0=[]
     for i,vec in enumerate(vecPts0):
         pllines=[]
-        for j,no in enumerate(divPts0[i]-(vec*(sca/2))):
+        for j,no in enumerate(divPts0[i]-(vec*(sca/10))):
             pllines.append([])
             pllines[j].append((no+arrows[i][1]).tolist())
             pllines[j].append((no+arrows[i][0]).tolist())
@@ -256,6 +256,6 @@ def previewElementload(self):
             pllines[j].append((no+arrows[i][1]).tolist())
             pllines[j].append((no-(vec[j]*0.05)).tolist())
             pllines[j].append((no-vec[j]).tolist())
-        pllines.append([(((divPts0[i]-(vec*(sca/2)))-vec)[0]).tolist(),(((divPts0[i]-(vec*(sca/2)))-vec)[-1]).tolist()])
+        pllines.append([(((divPts0[i]-(vec*(sca/10)))-vec)[0]).tolist(),(((divPts0[i]-(vec*(sca/10)))-vec)[-1]).tolist()])
         pllines0.append(pllines)
     self.outDict["ElementloadViz"]=pllines0

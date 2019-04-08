@@ -91,16 +91,98 @@ def viewFilter(jsonDict):
     return viewCheck
 
 def tab1():
+    nodeTab=[]
+
+    nodeTab.append(html.Div("Current Node: ",id='nodenumber'))
+    nodeTab.append(html.Br())
+    nodeTab.append(html.Div([
+        html.Div(html.B("Coordinates:")),
+        html.Div([
+            html.Div("X:",style={'width': '100px', 'display': 'inline-block'}),
+            html.Div(dcc.Input(id="nodeX",type='number',value=None,style={'text-align': 'right','width':'150px'}),id="nodeXdiv",style={'display': 'inline-block'})]),
+        html.Div([
+            html.Div("Y:",style={'width': '100px', 'display': 'inline-block'}),
+            html.Div(dcc.Input(id="nodeY",type='number',value=None,style={'text-align': 'right','width':'150px'}),id="nodeYdiv",style={'display': 'inline-block'})])
+        ],style={'width':'350px','display': 'inline-block'}))
+    nodeTab.append(html.Div([
+        html.Div(html.B("Loads: ")),
+        html.Div([
+            html.Div("X-direction:",style={'width': '100px', 'display': 'inline-block'}),
+            html.Div(dcc.Input(id="loaddirX",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id='loaddirXdiv',style={'display': 'inline-block'}),
+            html.Div("N",style={'display': 'inline-block'})]),
+        html.Div([
+            html.Div("Y-direction:",style={'width': '100px', 'display': 'inline-block'}),
+            html.Div(dcc.Input(id="loaddirY",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id='loaddirYdiv',style={'display': 'inline-block'}),
+            html.Div("N",style={'display': 'inline-block'})])
+        ],style={'width':'350px','display': 'inline-block'}))
+    nodeTab.append(html.Div([
+        html.Div(html.B("Supports: ")),
+        html.Div(dcc.Checklist(id='supportCheck',options=[{'label': 'X', 'value': 'X'},{'label': 'Y', 'value': 'Y'},{'label': 'Rotation', 'value': 'R'}],values=[]),id="supportsDiv")
+        ],style={'width':'350px','display': 'inline-block'}))
+    nodeTab.append(html.Br())
+    nodeTab.append(html.Br())
+    nodeTab.append(html.Div(html.Button('Apply Changes',id='applynode')))
+
     tabDiv = html.Div([
         dcc.Markdown("**Click on a node to see information.**"),
-        html.Div(id='click-data-nodes')
+        html.Div(nodeTab)
         ])
     return tabDiv
 
 def tab2():
+    elementTab=[]
+
+    elementTab.append(html.Div("Current Element: ",id='elenumber'))
+    elementTab.append(html.Br())
+    elementTab.append(html.Div([
+        html.Div(html.B("Nodes:")),
+        html.Div([
+            html.Div("Start Node:",style={'width': '100px', 'display': 'inline-block'}),
+            html.Div(dcc.Input(id="stNo",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id="eleStart",style={'display': 'inline-block'})]),
+        html.Div([
+            html.Div("End Node:",style={'width': '100px', 'display': 'inline-block'}),
+            html.Div(dcc.Input(id="enNo",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id="eleEnd",style={'display': 'inline-block'})])
+    ],style={'width':'350px','display': 'inline-block','height':'150px','vertical-align': 'top'}))
+    elementTab.append(html.Div([
+        html.Div(html.B("Loads: ")),
+        html.Div([
+            html.Div("X-direction:",style={'width': '100px', 'display': 'inline-block'}),
+            html.Div(dcc.Input(id="eleXdir",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id='eleXdirdiv',style={'display': 'inline-block'}),
+            html.Div("N/m",style={'display': 'inline-block'})]),
+        html.Div([
+            html.Div("Y-direction:",style={'width': '100px', 'display': 'inline-block'}),
+            html.Div(dcc.Input(id="eleYdir",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id='eleYdirdiv',style={'display': 'inline-block'}),
+            html.Div("N/m",style={'display': 'inline-block'})]),
+        html.Div(dcc.RadioItems(
+            id='localglobal',
+            options=[
+                {'label': 'Local Coordinates (X-axis parallel to element)', 'value': 'local'},
+                {'label': 'Global Coordines', 'value': 'global'},
+            ],
+            value='local',
+        ))
+        ],style={'width':'350px','display': 'inline-block','height':'150px','vertical-align': 'top'}))
+    elementTab.append(html.Div([
+        html.Div(html.B("Beam Parameters: ")),
+        html.Div([
+            html.Div("Section Area:",style={'width': '130px', 'display': 'inline-block'}),
+            html.Div(dcc.Input(id="sarea",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id="areaDiv",style={'display': 'inline-block'}),
+            html.Div('m2',style={'display': 'inline-block'})]),
+        html.Div([
+            html.Div("Moment of inertia:",style={'width': '130px', 'display': 'inline-block'}),
+            html.Div(dcc.Input(id="inert",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id="inertiaDiv",style={'display': 'inline-block'}),
+            html.Div('m4',style={'display': 'inline-block'})]),
+        html.Div([html.Div("E-modulus:",style={'width': '130px', 'display': 'inline-block'}),
+            html.Div(dcc.Input(id="emod",type='number',value=None,style={'text-align': 'right', 'width':'150px'}),id="emodulusDiv",style={'display': 'inline-block'}),
+            html.Div("Pa",style={'display': 'inline-block'})])
+        ],style={'width':'350px','display': 'inline-block','height':'150px','vertical-align': 'top'}))
+    elementTab.append(html.Br())
+    elementTab.append(html.Br())
+    elementTab.append(html.Div(html.Button('Apply Changes',id='applyelement')))
+
     tabDiv = html.Div([
         dcc.Markdown("**Click on an element to see information.**"),
-        html.Div(id='click-data-elements')
+        html.Div(elementTab)
         ])
     return tabDiv
 
@@ -125,7 +207,7 @@ def tab4():
 def tab5():
     tabDiv = html.Div([
         dcc.Markdown("**Hover the mouse over an element to see it's stiffness Matrix.**"),
-        html.Div(id='hover-data-matrix',style={'overflow-x':'auto'})
+        html.Div(id='click-data-matrix',style={'overflow-x':'auto'})
         ])
     return tabDiv
 
