@@ -589,7 +589,7 @@ def update_output(n_clicks,elenumber,stNo,enNo,eleXdir,eleYdir,localglobal,sarea
                 inJson['PyElementLoad'][eleInt]=load
 
     if emod is not None and sarea is not None and inert is not None:
-        inJson['PyMaterial'][eleInt]=[emod,sarea/(scale**2),inert/(scale**4)]
+        inJson['PyMaterial'][eleInt]=[emod,sarea,inert]
     return [json.dumps(inJson)]
 
 # ----UPDATE DICTIONARY-------------------------------------------------------------------------------------------------------------
