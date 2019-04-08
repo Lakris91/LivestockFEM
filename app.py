@@ -12,20 +12,41 @@ import sys
 import os
 from os import urandom
 from io import StringIO
-from flask import Flask
+from flask import Flask,send_from_directory
 from parseDict import plotDict
 from datetime import datetime, date
 from livestockFEM_v2 import FEM_frame
 from html_divs import *
 from six.moves.urllib.parse import quote
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+#external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 server = Flask(__name__)
 server.secret_key = urandom(16)
-app = dash.Dash(name=__name__, server=server, external_stylesheets=external_stylesheets)
+#app = dash.Dash(name=__name__, server=server, external_stylesheets=external_stylesheets)
+app = dash.Dash(name=__name__, server=server)
 app.config.supress_callback_exceptions = True
 app.title = 'LivestockFEM'
+
+#Stylesheet code by chriddyp https://community.plot.ly/t/how-do-i-use-dash-to-add-local-css/4914/2
+css_directory = os.getcwd()
+stylesheets = ['dash_plotly_stylesheet.css']
+static_css_route = '/static/'
+
+@app.server.route('{}<stylesheet>'.format(static_css_route))
+def serve_stylesheet(stylesheet):
+    if stylesheet not in stylesheets:
+        raise Exception(
+            '"{}" is excluded from the allowed static files'.format(
+                stylesheet
+            )
+        )
+    return send_from_directory(css_directory, stylesheet)
+
+for stylesheet in stylesheets:
+    app.css.append_css({"external_url": "/static/{}".format(stylesheet)})
+
+
 
 np.set_printoptions(threshold=sys.maxsize,linewidth=sys.maxsize)
 
@@ -325,22 +346,26 @@ def update_output(n_clicks,nodenumber,nodeX,nodeY,loaddirX,loaddirY,supportCheck
         inJson=json.loads(jsonStr_new[0])
     nodeInt=int(nodenumber.replace("Current Node: ",""))
     scale=inJson["UnitScaling"]
-    inJson["PyNodes"][nodeInt]=[nodeX/scale,nodeY/scale]
+
+    if nodeX is not None and nodeY is not None:
+        inJson["PyNodes"][nodeInt]=[nodeX/scale,nodeY/scale]
+
     loaddoflist=(np.array(inJson['PyNodeLoad']).T[0]).tolist()
 
-    if not nodeInt*3 in loaddoflist and float(loaddirX) != 0.0:
-        inJson['PyNodeLoad'].append([nodeInt*3,float(loaddirX)])
-    elif nodeInt*3 in loaddoflist and float(loaddirX) == 0.0:
-        inJson['PyNodeLoad'].pop(loaddoflist.index(nodeInt*3))
-    elif nodeInt*3 in loaddoflist:
-        inJson['PyNodeLoad'][loaddoflist.index(nodeInt*3)]=[nodeInt*3,float(loaddirX)]
+    if loaddirX is not None and loaddirY is not None:
+        if not nodeInt*3 in loaddoflist and float(loaddirX) != 0.0:
+            inJson['PyNodeLoad'].append([nodeInt*3,float(loaddirX)])
+        elif nodeInt*3 in loaddoflist and float(loaddirX) == 0.0:
+            inJson['PyNodeLoad'].pop(loaddoflist.index(nodeInt*3))
+        elif nodeInt*3 in loaddoflist:
+            inJson['PyNodeLoad'][loaddoflist.index(nodeInt*3)]=[nodeInt*3,float(loaddirX)]
 
-    if not nodeInt*3+1 in loaddoflist and float(loaddirY) != 0.0:
-        inJson['PyNodeLoad'].append([nodeInt*3+1,float(loaddirY)])
-    elif nodeInt*3+1 in loaddoflist and float(loaddirY) == 0.0:
-        inJson['PyNodeLoad'].pop(loaddoflist.index(nodeInt*3+1))
-    elif nodeInt*3+1 in loaddoflist:
-        inJson['PyNodeLoad'][loaddoflist.index(nodeInt*3+1)]=[nodeInt*3+1,float(loaddirY)]
+        if not nodeInt*3+1 in loaddoflist and float(loaddirY) != 0.0:
+            inJson['PyNodeLoad'].append([nodeInt*3+1,float(loaddirY)])
+        elif nodeInt*3+1 in loaddoflist and float(loaddirY) == 0.0:
+            inJson['PyNodeLoad'].pop(loaddoflist.index(nodeInt*3+1))
+        elif nodeInt*3+1 in loaddoflist:
+            inJson['PyNodeLoad'][loaddoflist.index(nodeInt*3+1)]=[nodeInt*3+1,float(loaddirY)]
 
     if len(inJson['PyNodeLoad'])==0:
         inJson['PyNodeLoad']=[[0,0.0]]
@@ -593,29 +618,32 @@ def update_output(n_clicks,elenumber,stNo,enNo,eleXdir,eleYdir,localglobal,sarea
     eleInt=int(elenumber.replace("Current Element: ",""))
     scale=inJson["UnitScaling"]
 
-    inJson["PyElements"][eleInt]=[stNo,enNo]
+    if stNo is not None and enNo is not None:
+        inJson["PyElements"][eleInt]=[stNo,enNo]
 
-    if localglobal == 'local':
-        inJson['PyElementLoad'][eleInt]=[eleXdir,eleYdir]
-    else:
-        if float(eleXdir)==0.0 and float(eleYdir)==0.0:
-            inJson['PyElementLoad'][eleInt]=[0.0,0.0]
+    if eleXdir is not None and eleYdir is not None:
+        if localglobal == 'local':
+            inJson['PyElementLoad'][eleInt]=[eleXdir,eleYdir]
         else:
-            nodes=np.array(inJson['PyNodes'])[inJson["PyElements"][eleInt]]
-            v = nodes[1]-nodes[0]
-            if v[0]==0 and v[1]>0:
-                ang = -math.pi/2
-            elif v[0]==0 and v[1]<0:
-                ang = math.pi/2
+            if float(eleXdir)==0.0 and float(eleYdir)==0.0:
+                inJson['PyElementLoad'][eleInt]=[0.0,0.0]
             else:
-                ang = -math.atan(v[1]/v[0])
-            load=[eleXdir,eleYdir]
-            x,y=load
-            load[0]=x*math.cos(ang)-y*math.sin(ang)
-            load[1]=x*math.sin(ang)+y*math.cos(ang)
-            inJson['PyElementLoad'][eleInt]=load
+                nodes=np.array(inJson['PyNodes'])[inJson["PyElements"][eleInt]]
+                v = nodes[1]-nodes[0]
+                if v[0]==0 and v[1]>0:
+                    ang = -math.pi/2
+                elif v[0]==0 and v[1]<0:
+                    ang = math.pi/2
+                else:
+                    ang = -math.atan(v[1]/v[0])
+                load=[eleXdir,eleYdir]
+                x,y=load
+                load[0]=x*math.cos(ang)-y*math.sin(ang)
+                load[1]=x*math.sin(ang)+y*math.cos(ang)
+                inJson['PyElementLoad'][eleInt]=load
 
-    inJson['PyMaterial'][eleInt]=[emod,sarea/(scale**2),inert/(scale**4)]
+    if emod is not None and sarea is not None and inert is not None:
+        inJson['PyMaterial'][eleInt]=[emod,sarea/(scale**2),inert/(scale**4)]
     return [json.dumps(inJson)]
 
 # ----UPDATE DICTIONARY-------------------------------------------------------------------------------------------------------------
