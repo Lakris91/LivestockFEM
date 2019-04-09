@@ -199,14 +199,13 @@ def tab4():
     tabDiv= html.Div([
             html.B("List of node loads and element loads in system:"),
             html.Div(html.I("(to change the loads please go to the Nodes- or Elements-tab)")),
-            #html.P("Loads are in global coordinate system."),
             html.Div(id='loadsTab')
             ])
     return tabDiv
 
 def tab5():
     tabDiv = html.Div([
-        dcc.Markdown("**Hover the mouse over an element to see it's stiffness Matrix.**"),
+        dcc.Markdown("**Click on an element to see it's stiffness Matrix.**"),
         html.Div(id='click-data-matrix',style={'overflow-x':'auto'})
         ])
     return tabDiv
