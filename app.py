@@ -686,18 +686,23 @@ def update_output2(jsonStr_new,jsonStr_ori):
         html.Details([
             html.Summary('View explanation (Supports and Reactions forces)'),
             html.Div([
-                html.Div("There are 4 types of supports: Fixed, Pinned, Roller and Simple."),
+                html.P("""There are four different types of supports: Fixed-, pinned-, roller- and guided support.
+                Supports consists of sets of reaction forces, counteracting the load forces applied to the structure, securing the structure stays in place.
+                For the structure to stay in place, it must be in equilibrium, this means the sum of the horizontal and vertical reactions must be equal to sum of the horizontal and vertical loads,
+                respectively, but with opposite sign.""",style={'width':'1000px'}),
                 html.Div([
                     html.B("Fixed:"),
                     html.Br(),
                     html.Img(src=app.get_asset_url('fixed.png')),
                     html.Img(src=app.get_asset_url('fixed_reactions.png')),
-                    html.P("""Fixed supports, also called rigid or cantilevered support, supports the structure in both the X-direction, Y-direction and against rotation (moments).
-                    Making the structure unable to move up or down and side to side in the supported node, and prevents the structure from rotating around the node.\n
-                    To prevent the structure from moving and rotating in the node, the support counter acts (reacts) on the forces (loads) applied to the structure.
-                    Positive X-reactions means the structure would move left in the node if it was not supported. Positive Y-reactions means the structure will move downwards in the node if it was not supported.
-                    Positive Moment-reactions means the structure will rotate clockwise around the node if it was not supported. This means the sum of the reactions in the Y-direction
-                    for the entire system is equal to the sum of the loads in the Y-direction fot the system, the same is the case for reactions in the X-direction.\nExamples of real life fixed supports can be seen below.""",style={'width':'90%'}),
+                    html.P("""Fixed supports, also called rigid or cantilevered support, locks the structure in both the x-direction, y-direction and against rotation.
+                    This means the structure is unable to move up or down and from side to side in the supported node, it also stops the structure from rotating around the node.
+                    To prevent the structure from moving and rotating in the node, the support counteracts on the load forces applied to the structure.
+                    The method used in this thesis, specifies the reaction forces' directions as shown in the figure above.
+                    Positive x-reactions means the structure would move left in the node, if it was not supported.
+                    Positive y-reactions means the structure will move downwards in the node, if it was not supported.
+                    Positive moment-reactions means the structure will rotate clockwise around the node if it was not supported.
+                    Examples of fixed supports in practice can be seen below.""",style={'width':'1000px'}),
                     html.Img(src=app.get_asset_url('fixed_examples.png'))
                     ]),
                 html.Div([
@@ -706,10 +711,10 @@ def update_output2(jsonStr_new,jsonStr_ori):
                     html.Br(),
                     html.Img(src=app.get_asset_url('pinned.png')),
                     html.Img(src=app.get_asset_url('pinned_reactions.png')),
-                    html.P("""Pinned supports, supports the structure in both the X-direction and Y-direction but not against rotation (moments). Making the structure unable to move up or down and side to side in the supported node,
-                    but lets the structure rotate around the node.\nTo prevent the structure from moving, the suppport counter acts (reacts) on the forces (loads) applied to the structure.
-                    As with the fixed support positive X-reactions means the structure would move left in the node if it was not supported and positive Y-reactions means the structure will move downwards in the node if it was not supported. \n
-                    Examples of real life pinned supports can be seen below.""",style={'width':'90%'}),
+                    html.P("""Pinned supports, supports the structure in both the x-direction and the y-direction, but not against rotation.
+                    Making the structure unable to move up or down and from side to side in the supported node, but lets the structure rotate around the node.
+                    Pinned supports uses the same direction for the reactions as the fixed support. In practice pinned supports does not necessarily mean it is hinged.
+                    Examples of pinned supports in practice can be seen below.""",style={'width':'1000px'}),
                     html.Img(src=app.get_asset_url('pinned_examples.png'))
                     ]),
                 html.Div([
@@ -718,23 +723,25 @@ def update_output2(jsonStr_new,jsonStr_ori):
                     html.Br(),
                     html.Img(src=app.get_asset_url('roller.png')),
                     html.Img(src=app.get_asset_url('roller_reactions.png')),
-                    html.P("""Roller supports, supports the structure in only one direction either the X-direction or the Y-direction and do not supports against rotation (moments).
-                    Making the structure unable to move either up or down or side to side in the supported node, but lets the structure rotate around the node.\n
-                    To prevent the structure from moving, the suppport counter acts (reacts) on the forces (loads) applied to the structure.
-                    As with the fixed support positive X-reactions means the structure would move left in the node if it was not supported and positive Y-reactions means the structure will move downwards in the node if it was not supported.
-                    Eventhough often illustrated as supports with wheels under it, it is rarely the case, instead it is mostly used for bridge bearings letting the move slightly back and forth to accomodate fluctuations and vibrations.\n
-                    Examples of real life pinned supports can be seen below.""",style={'width':'90%'}),
+                    html.P("""Roller supports, supports the structure in only one direction either the x-direction or the y-direction, it do not support against rotation.
+                    This makes the structure unable to move either up or down or from side to side in the supported node, but lets the structure rotate around the node.
+                    Roller supports uses the same direction for the reactions as the fixed and pinned supports.
+                    Even though often illustrated as supports with wheels under it, it is rarely the case,
+                    instead it is mostly used for bridge bearings that lets the bridge deck move slightly back and forth to accommodate fluctuations and vibrations.
+                    Examples of roller supports in practice can be seen in the pictures below.""",style={'width':'1000px'}),
                     html.Img(src=app.get_asset_url('roller_examples.png'))
                     ]),
                 html.Div([
                     html.Br(),
-                    html.B("Simple:"),
+                    html.B("Guided:"),
                     html.Br(),
                     html.Img(src=app.get_asset_url('simple.png')),
                     html.Img(src=app.get_asset_url('simple_reactions.png')),
-                    html.P("""Simple support, rarely used, supports the structure in only one direction either the X-direction or the Y-direction and supports against rotation (moments).
-                    Making the structure unable to move either up or down or side to side in the supported node, prevents the structure from rotating around the node. \n
-                    As mentioned this is rarely used, the best example are unhinged shock absorber, hydraulic pumbs or elliptic springs like on a horse carriage, see example below, these makes the carriage only able to move up and down. """,style={'width':'90%'}),
+                    html.P("""Guided supports, supports the structure in only one direction either the x-direction or the y-direction and supports against rotation.
+                    Making the structure unable to move either up or down or from side to side in the supported node, and prevents the structure from rotating around the node.
+                    Guided supports uses the same direction for the reactions as the other three support types. It is rarely used in civil engineering, some examples from other fields,
+                    are unhinged shock-absorbers, hydraulic pumps or elliptic springs like on a horse carriage, see picture below,
+                    these makes the carriage able to only move up and down.""",style={'width':'1000px'}),
                     html.Img(src=app.get_asset_url('simple_examples.png'))
                     ]),
             ])],
@@ -745,23 +752,8 @@ def update_output2(jsonStr_new,jsonStr_ori):
         html.Details([
             html.Summary('View explanation (Reactions calculations)'),
             html.Div([
-                html.Div(html.Img(src=app.get_asset_url('dof_nohinge_alpha.png'))),
-                html.P("""Looking at the example above, we got the system stiffness matrix K which can be seen below, to see how this is found go to the Matrix tab. \n
-                From the K matrix the Kff is found by removing the rows and columns corresponding to the supported degrees of freedom (DOF),
-                in this case node 1 and 4 are supported in X- and Y-direction, corresponding to DOF 1,2,10 and 11 these are therefore the rows and columns that are removed.\n
-                The matrix Kuf (marked with blue) is found by taking the rows of supported DOF, 1,2,10 and 11, and removing the columns corresponding to the support DOF.\n
-                We also have the load vector R which consist of the loads corresponding to the DOF, as we can see the only load in the system, is placed in DOF number 5, with the size P in the opposite direction of the DOF.
-                For elementloads the reactions are calculated for the single elements, the reactions are then added to the load vector. By removing the supported DOFS, 1,2,10 and 11, we get the vector Rf.\n
-                """,style={'width':'90%'}),
-                html.Div(html.Img(src=app.get_asset_url('k_matrix.png'),style={'width':'800px'})),
-                html.Div(html.Img(src=app.get_asset_url('kff_mat.png'),style={'width':'800px'})),
-                html.Div(html.Img(src=app.get_asset_url('kuf_mat.png'),style={'width':'750px'})),
-                html.Div(html.Img(src=app.get_asset_url('loadvec.png'),style={'width':'800px'})),
-                html.P("""To find the reactions we first need to calculate the displacement in all the unsupported nodes, Vf, this is done by taking the inverse matrix of Kff and dot it witf Rf as seen below.\n
-                The contribution from all the free DOFS to the reactions, Ru, is then found by taking the dot product of Kuf and Vf. To get the full reactions Ru are added together with discarded loads (the loads marked red) from the loadvector, R,
-                this is only needed if any loads are acting directly on the supported DOF, which is not the case in this example.
-                """,style={'width':'90%'}),
-                html.Div(html.Img(src=app.get_asset_url('dispreac_calc.png'),style={'width':'800px'})),
+                html.Div(html.Img(src=app.get_asset_url('dof_nohinge_alpha.png'),style={'width':'1000px'})),
+                html.Div(html.Img(src=app.get_asset_url('test.png'),style={'width':'1000px'})),
             ])],
             style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}),
         html.Br(),
@@ -915,8 +907,21 @@ def update_output2(jsonStr_new,jsonStr_ori):
         ]))
 
     tabDiv = html.Div([
+        html.Details([
+            html.Summary('View explanation (Load types)'),
+            html.Div([
+                html.Div(html.Img(src=app.get_asset_url('loadtypes.png'),style={'width':'1000px'})),
+            ])],
+            style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}),
         html.Br(),
         html.Table(tableContent),
+        html.Br(),
+        html.Details([
+            html.Summary('View explanation (Load vectors)'),
+            html.Div([
+                html.Div(html.Img(src=app.get_asset_url('loadvector.png'),style={'width':'1000px'})),
+            ])],
+            style={'backgroundColor':'#e8e8e8','borderWidth': '1px','borderStyle': 'solid','borderRadius': '2px'}),
         html.Br(),
         html.Br(),
         html.Br(),
@@ -1024,12 +1029,12 @@ def update_output2(value,jsonStr_new,jsonStr_ori):
                 html.Tr([
                     html.Td("Max Absolute Normal Forces:"),
                     html.Td(str(int(round(maxNormal))),style={'textAlign':'right'}),
-                    html.Td("N/m2")
+                    html.Td("N")
                 ],style={'padding': '0px'}),
                 html.Tr([
                     html.Td("Max Absolute Shear Forces:"),
                     html.Td(str(int(round(maxShear))),style={'textAlign':'right'}),
-                    html.Td("N/m2")
+                    html.Td("N")
                 ],style={'padding': '0px'})
             ]),
             html.Br(),
@@ -1125,7 +1130,7 @@ def update_output2(jsonStr_new,jsonStr_ori):
             rl is found by taking the dot product of the local element stiffness matrix (see explanation in the Matrix tab) and the local node displacement vl (see explanation in the Supports tab).
             """,style={'width':'90%'}),
             html.Div(html.Img(src=app.get_asset_url('section_forces.png'),style={'width':'800px'})),
-            html.P("""Looking at the first element in the example below, we get the following:
+            html.P("""Looking at the second element in the example below, we get the following internal forces:
             """,style={'width':'90%'}),
             html.Div(html.Img(src=app.get_asset_url('dof_nohinge_alpha.png'),style={'width':'800px'})),
             html.Div(html.Img(src=app.get_asset_url('section_results.png'),style={'width':'800px'})),

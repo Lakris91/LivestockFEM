@@ -3,6 +3,8 @@ from numpy import array
 from numpy.linalg import norm
 import math
 
+
+
 def previewSupports(self):
     NodesIndex=[]
     NodesCoord=[]
@@ -259,3 +261,11 @@ def previewElementload(self):
         pllines.append([(((divPts0[i]-(vec*(sca/10)))-vec)[0]).tolist(),(((divPts0[i]-(vec*(sca/10)))-vec)[-1]).tolist()])
         pllines0.append(pllines)
     self.outDict["ElementloadViz"]=pllines0
+
+def plusPos(X1,X2):
+    n = X2-X1
+    L = math.sqrt(n @ n)
+    n = n/L
+    xm = ((X1[0]+X2[0])/2-n[1]*L/15)
+    ym = ((X1[1]+X2[1])/2+n[0]*L/15)
+    return np.array([xm,ym,0.0])
