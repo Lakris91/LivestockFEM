@@ -11,3 +11,5 @@ The source code for the web application can be found in the "LivestockFEM_DashAp
 https://livestock-fem.herokuapp.com/
 
 Under Releases you will be able to find the Grasshopper plugin and an installation guide.
+
+In the Master branch, you will find the original, MatLab code, the implementation was based upon. You will also find some obsolete code from previous versions.
