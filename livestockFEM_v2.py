@@ -2,7 +2,6 @@ import json
 import numpy as np
 from livestockFEM_local import *
 from livestockFEM_viz import *
-array=np.array
 import sys
 import os
 import math
@@ -23,13 +22,13 @@ class FEM_frame:
         self.outDict["ForcePlot2"]=[]
         self.outDict["ForcePlot3"]=[]
         self.outDict["MomentForcesPt"]=[]
-        self.X = array(inDict["PyNodes"])
-        self.T = array(inDict["PyElements"])
-        self.D = array(inDict["PyDOFS"])
-        self.G = array([mat[:3] for mat in inDict["PyMaterial"]])
-        self.U = array(inDict["PySupport"])
-        self.bL = array(inDict["PyNodeLoad"])
-        self.dL = np.round(array(inDict["PyElementLoad"]),0)
+        self.X = np.array(inDict["PyNodes"])
+        self.T = np.array(inDict["PyElements"])
+        self.D = np.array(inDict["PyDOFS"])
+        self.G = np.array([mat[:3] for mat in inDict["PyMaterial"]])
+        self.U = np.array(inDict["PySupport"])
+        self.bL = np.array(inDict["PyNodeLoad"])
+        self.dL = np.round(np.array(inDict["PyElementLoad"]),0)
         self.plotScale = inDict["UnitScaling"]
         self.Vskala = inDict["PlotScalingDeformation"]
         self.Sskala = inDict["PlotScalingForces"]/1000
@@ -147,8 +146,8 @@ class FEM_frame:
             X2 = self.X[self.T[el][1]]
             v=self.V[self.D[el]]
             DOFPlot,DefDist = deformationPlot(X1,X2,v,div,self.Vskala)
-            self.outDict["DOFPlot"].append(np.around(array(DOFPlot)*self.plotScale,rou).tolist())
-            self.outDict["DefDist"].append(np.around(array(DefDist)*self.plotScale,rou).tolist())
+            self.outDict["DOFPlot"].append(np.around(np.array(DOFPlot)*self.plotScale,rou).tolist())
+            self.outDict["DefDist"].append(np.around(np.array(DefDist)*self.plotScale,rou).tolist())
 
 
     # Generate geometry for force plots
